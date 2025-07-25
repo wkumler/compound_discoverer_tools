@@ -7,7 +7,13 @@ stan_list <- read_csv("manual_mzvault/stan_list.csv") %>%
   filter(!is.na(rtmin))
 
 # Connect to MS2 database and extract MS2 spectra
-# matdb_stans.duckdb comes from running duckdb_conv.R
+
+# devtools::install_github("wkumler/mzml2db", build_vignettes = TRUE)
+# library(mzml2db)
+# ms_files <- list.files(r"(Z:\1_QEdata\2025\250625_ExtractionTests_Phytos_POS-NEG\pos)",
+#                        full.names = TRUE, pattern="Std.*Mix\\dInH2O")
+# mzml2db(ms_files, db_name = "manual_mzvault/matbd_stans.duckdb", overwrite_ok = TRUE)
+
 library(DBI)
 duckcon <- dbConnect(duckdb::duckdb(), "manual_mzvault/matbd_stans.duckdb", read_only=TRUE)
 extracted_ms2s <- stan_list %>%
