@@ -1,80 +1,15 @@
 
-
-library(DBI)
-
-dbcon <- dbConnect(RSQLite::SQLite(), "manual_mzvault/ingalls_vault.db")
-
-dbListTables(dbcon)
-
-sapply(dbListTables(dbcon), function(table_name)dbListFields(dbcon, table_name))
-
-cmpd_data <- dbGetQuery(dbcon, "SELECT * FROM CompoundTable")
-spec_data <- dbGetQuery(dbcon, "SELECT * FROM SpectrumTable")
-dbGetQuery(dbcon, "SELECT * FROM MaintenanceTable")
-dbGetQuery(dbcon, "SELECT * FROM HeaderTable")
-
-int_blob <- spec_data$blobIntensity[[1]]
-int_vec <- readBin(int_blob, what = "numeric", size = 8, endian = "little", length(int_blob)/8)
-mz_blob <- spec_data$blobMass[[1]]
-mz_vec <- readBin(mz_blob, what = "numeric", size = 8, endian = "little", length(mz_blob)/8)
-
-plot(mz_vec, int_vec, type="h")
-
-dbDisconnect(dbcon)
-
-
-mz_blob2 <- writeBin(mz_vec, raw(), size = 8, endian = "little")
-mz_vec2 <- readBin(mz_blob2, what = "numeric", size = 8, endian = "little", length(mz_blob)/8)
-identical(mz_blob, mz_blob2)
-
-
-# Extract the original PRAGMA for each table
-dbcon <- dbConnect(RSQLite::SQLite(), "manual_mzvault/ingalls_vault.db")
-cmpd_schema <- dbGetQuery(dbcon, "PRAGMA table_info(SpectrumTable)")
-cmpd_columns <- paste(
-  cmpd_schema$name,
-  cmpd_schema$type,
-  ifelse(cmpd_schema$pk == 1, "PRIMARY KEY", ""),
-  collapse = ", "
-)
-sprintf("CREATE TABLE SpectrumTable (%s)", cmpd_columns)
-dbDisconnect(dbcon)
-
 library(tidyverse)
 library(RaMS)
-ms1_files <- list.files(r"(Z:\1_QEdata\2025\250625_ExtractionTests_Phytos_POS-NEG\pos_ms1)",
-                        full.names = TRUE, pattern="Std.*Mix\\dInH2O")
-ms1_data <- grabMSdata(ms1_files)
 
-ms1_data$MS1[mz%between%pmppm(90.055, 10)] %>%
-  filter(rt%between%c(10, 13)) %>%
-  slice_max(int, by=c(rt, filename)) %>%
-  qplotMS1data(color_col="filename")
-ms1_data$MS1[mz%between%pmppm(152.057235, 10)] %>%
-  slice_max(int, by=c(rt, filename)) %>%
-  qplotMS1data(color_col="filename")
-plotly::ggplotly()
+# Read in standard list
+stan_list <- read_csv("manual_mzvault/stan_list.csv") %>%
+  filter(!is.na(rtmin))
 
-
-library(tidyverse)
-rt_bounds <- tribble(
-  ~Compound_Name, ~rtmin, ~rtmax,
-  "Sarcosine", 10.25, 10.85,
-  "L-Alanine",10.85, 11.61,
-  "beta-Alanine", 11.61, 12.2,
-  "Adenine", 4.5, 5.3,
-  "Guanine", 8.3, 9.1
-)
-
-stan_list <- read_csv("https://github.com/IngallsLabUW/Ingalls_Standards/raw/refs/heads/master/Ingalls_Lab_Standards.csv") %>%
-  filter(z>0) %>%
-  filter(Compound_Name%in%c("L-Alanine", "beta-Alanine", "Sarcosine", "Guanine", "Adenine")) %>%
-  select(Compound_Name, mz, HILIC_Mix, Empirical_Formula) %>%
-  left_join(rt_bounds)
-
+# Connect to MS2 database and extract MS2 spectra
+# matdb_stans.duckdb comes from running duckdb_conv.R
 library(DBI)
 duckcon <- dbConnect(duckdb::duckdb(), "manual_mzvault/matbd_stans.duckdb", read_only=TRUE)
-
 extracted_ms2s <- stan_list %>%
   pmap(function(...){
     row_data <- list(...)
