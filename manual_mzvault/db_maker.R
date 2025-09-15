@@ -89,7 +89,7 @@ extracted_ms2s <- stan_list %>%
       mutate(frag_group=mz_group(fragmz, ppm = 10), .by = c(filename)) %>%
       # Remove fragments that don't appear in at least 50% of the scans
       mutate(n_scans=n(), .by=c(filename, frag_group)) %>%
-      filter(n_scans>=max(n_scans)*0.1, .by=filename) %>%
+      filter(n_scans>=max(n_scans)*1, .by=filename) %>%
       select(-n_scans) %>%
       # Remove fragments that only appear in one file
       mutate(frag_group=mz_group(fragmz, ppm = 10)) %>%
@@ -103,6 +103,7 @@ extracted_ms2s <- stan_list %>%
       arrange(med_fragmz)
   }, .progress=TRUE) %>%
   bind_rows()
+write_csv(extracted_ms2s, "manual_mzvault/extracted_ms2s.csv")
 dbDisconnect(duckcon)
 
 
