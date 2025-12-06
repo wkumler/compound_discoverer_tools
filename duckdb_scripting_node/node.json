@@ -1,0 +1,89 @@
+{
+  "Guid": "ca78267a-2560-4b1d-a60d-1faa8c739ddd",
+  "Category": "Ingalls Lab custom nodes",
+  "Name": "SQL database builder",
+  "Description": "Builds a SQL database from the MS1 and MS2 data via R's mzml2db package.",
+  "Version": 1,
+  "Publisher": null,
+  "DevelopedBy": "William Kumler",
+  "Homepage": "https://github.com/wkumler/mzml2db",
+  "LegalInformation": null,
+  "WorkflowType": "Post-Processing",
+  "ImageLarge": "IMG_32x32.png",
+  "ImageSmall": "IMG_16x16.png",
+  "License": null,
+  "ScriptProcessorArguments": {
+    "ExecutableCommandLineArguments": "\"C:\\Program Files\\Thermo\\Compound Discoverer 3.4\\Tools\\Scripts\\sqldb\\sql_db_builder.R\" %NODEARGS% %PARAMETERS%",
+    "ExecutablePath": "C:\\Program Files\\R\\R-4.5.1\\bin\\Rscript.exe",
+    "ExpectResponse": false,
+    "UseRFriendlyNames": true,
+    "RequestedTablesAndColumns": "Input Files"
+  },
+  "Parameters": [
+    {
+      "Category": "General",
+      "DataType": "String",
+      "Name": "Database type",
+      "Default": "duckdb",
+      "SelectionValues": ["duckdb","SQLite"],
+      "Description": "The type of SQL database to be constructed (currently limited to DuckDB and SQLite but easily extensible if requested"
+    },
+    {
+      "Category": "General",
+      "DataType": "String",
+      "Name": "Output database pathname",
+      "Default": "'C:\\Users\\Ingalls Lab\\Desktop\\msdata.duckdb'",
+      "Description": "The name of the database to be produced including its absolute path. Include single quotes if there are spaces in the path"
+    },
+    {
+      "Category": "General",
+      "DataType": "String",
+      "Name": "MS levels",
+      "Default": "",
+      "Description": "Which MS levels to write into the database? Passed directly to msconvert (int_set syntax)."
+    },
+    {
+      "Category": "General",
+      "DataType": "String",
+      "Name": "Sort by",
+      "Default": "",
+      "SelectionValues": ["mz","rt"],
+      "Description": "Sorting order used during database construction. Defaults to filename>rt>mz."
+    },
+    {
+      "Category": "General",
+      "DataType": "String",
+      "Name": "Database file subset",
+      "Default": "",
+      "Description": "Regular expression used to subset raw files by absolute path."
+    },
+    {
+      "Category": "Advanced",
+      "DataType": "Boolean",
+      "Name": "Centroid?",
+      "Default": "TRUE",
+      "Description": "Use vendor centroiding in msconvert? FALSE means leave in profile mode."
+    },
+    {
+      "Category": "Advanced",
+      "DataType": "String",
+      "Name": "msconvert path",
+      "Default": "",
+      "Description": "Absolute path to msconvert if not on system PATH."
+    },
+    {
+      "Category": "Advanced",
+      "DataType": "String",
+      "Name": "Intermediate mzML write path",
+      "Default": "",
+      "Description": "Override R's tempdir() for the location where mzMLs are written."
+    },
+    {
+      "Category": "Advanced",
+      "DataType": "Boolean",
+      "Name": "Remove mzMLs?",
+      "Default": "TRUE",
+      "Description": "Remove temporary mzML files after database creation."
+    }
+  ]
+}
