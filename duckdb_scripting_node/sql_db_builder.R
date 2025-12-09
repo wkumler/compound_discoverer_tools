@@ -3,8 +3,8 @@ library(rjson)
 library(mzml2db)
 
 CD_json_in <- fromJSON(file=commandArgs()[6])
-saveRDS(CD_json_in, file = "C:\\Users\\Ingalls Lab\\Desktop\\compound_discoverer_tools\\duckdb_scripting_node\\CD_json_in.rds")
-CD_json_in <- readRDS("C:\\Users\\Ingalls Lab\\Desktop\\compound_discoverer_tools\\duckdb_scripting_node\\CD_json_in.rds")
+# saveRDS(CD_json_in, file = "C:\\Users\\Ingalls Lab\\Desktop\\compound_discoverer_tools\\duckdb_scripting_node\\CD_json_in.rds")
+# CD_json_in <- readRDS("C:\\Users\\Ingalls Lab\\Desktop\\compound_discoverer_tools\\duckdb_scripting_node\\CD_json_in.rds")
 
 db_engine <- CD_json_in$NodeParameters$`Database type`
 # db_engine <- "duckdb"
@@ -26,6 +26,7 @@ ms_levels_to_convert <- CD_json_in$NodeParameters$`MS levels`
 file_subset_pattern <- CD_json_in$NodeParameters$`Database file subset`
 # file_subset_pattern <- "Poo"
 
+sort_by_column <- CD_json_in$NodeParameters$`Sort by`
 
 msconvert_exe_path <- CD_json_in$NodeParameters$`msconvert path`
 # msconvert_exe_path <- ""
@@ -63,7 +64,7 @@ if(msconvert_exe_path==""){
   message(paste("Using msconvert at"), msconvert_exe_path)
 }
 
-if(is.null(mzml_write_path)){
+if(mzml_write_path==""){
   temp_dir <- tempdir()
 } else {
   temp_dir <- mzml_write_path
@@ -81,7 +82,7 @@ if(centroid){
   msconvert_cmd <- paste(msconvert_cmd, "--filter \"peakPicking true 1-\"")
 }
 
-if(ms_levels_to_convert==""){
+if(ms_levels_to_convert!=""){
   msconvert_cmd <- paste(msconvert_cmd, "--filter \"msLevel", ms_levels_to_convert, "\"")
 }
 
@@ -90,5 +91,6 @@ system(msconvert_cmd, show.output.on.console = FALSE)
 
 message(paste("Converting to", db_engine))
 engine <- eval(parse(text=paste0(db_engine, "()")))
-mzml2db(ms_files = mzml_paths, db_engine = engine, db_name = output_file, verbosity = 0, sort_by = "mz", overwrite_ok=TRUE)
+mzml2db(ms_files = mzml_paths, db_engine = engine, db_name = output_file, 
+        verbosity = 0, sort_by = sort_by_column, overwrite=TRUE)
 message(paste("Database constructed at", output_file))
