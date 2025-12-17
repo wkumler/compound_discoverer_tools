@@ -1,19 +1,17 @@
 
-# Read arguments from CD.
-args <- commandArgs()
-
-
-# 6th argument is the name of the JSON file
-inputFile <- args[6]
-
-
-# Open JSON file, find exported files, read into tables
 library(rjson)
-CD_json_in <- fromJSON(file=inputFile)
+CD_json_in <- fromJSON(file=commandArgs()[6])
 
-Compounds <- read.table(CD_json_in$Tables[[1]]$DataFile, header=TRUE, check.names = FALSE, stringsAsFactors = FALSE)
+node_dev_dir <- "C:/Users/Ingalls Lab/Desktop/compound_discoverer_tools"
+project_dir <- "/duckdb_scripting_node"
 
-save.image(file="C:/Users/Ingalls Lab/Desktop/compound_discoverer_tools/node_output.RData")
+lapply(CD_json_in$Tables, function(table_info_i){
+  table_i <- read.table(table_info_i$DataFile, header=TRUE, check.names = FALSE)
+  name_i <- paste0(node_dev_dir, project_dir, "/", table_info_i$TableName, ".csv")
+  assign(x = gsub(" ", "_", table_info_i$TableName), envir = globalenv())
+  write.csv(table_i, name_i, row.names = FALSE)
+})
 
-# load("C:\\TEMP\\Rimage.dat")
+save.image(file=paste0(node_dev_dir, project_dir, "/node_output.RData"))
 
+# load("C:/Users/Ingalls Lab/Desktop/compound_discoverer_tools/duckdb_scripting_node/node_output.RData")
