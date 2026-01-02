@@ -7,7 +7,7 @@
 "Version": 1,
 "Publisher": null,
 "DevelopedBy": "William Kumler",
-"Homepage": "https://github.com/wkumler/mzml2db",
+"Homepage": "https://github.com/wkumler/compound_discoverer_tools/tree/main/duckdb_scripting_node",
 "LegalInformation": null,
 "WorkflowType": "Post-Processing",
 "ImageLarge": "IMG_32x32.png",

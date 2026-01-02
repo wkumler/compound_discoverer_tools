@@ -9,7 +9,7 @@ The repository contains two files:
 
 ## Installation
 
-To install the SQL builder, ensure R is installed and obtain its path (typically XXX)
+To install the SQL builder, ensure R is installed and obtain its path (e.g. C:\\Program Files\\R\\R-4.5.1\\bin\\)
 You will need to install the `rjson` package from CRAN, the `mzml2db` package from
 Github, as well as `DBI` and whatever database driver you'd like to use. Right
 now only DuckDB and SQLite are supported.
@@ -75,8 +75,21 @@ Under "General":
 
 Under "Advanced":
 
-  - `Centroid?`
-  - `msconvert path`
-  - `Intermediate mzML write path`
-  - `Remove mzMLs?`
+  - `Centroid?` determines whether the mzMLs should be centroided during the conversion. While it is possible
+  to write the data out in profile mode, this is not recommended due to the large file size that results.
+  - `msconvert path` denotes the location that the msconvert.exe executable can
+  be found. If left empty, the node searches the system's path. This also allows
+  for the specification of a given msconvert version for use.
+  - `Intermediate mzML write path` specifies the location where the mzMLs converted
+  by msconvert should reside while they're read into the SQL database. Useful
+  if disk space is limited on a given partition or `Remove mzMLs` (below) is False.
+  If left empty, uses a temporary folder provided by R's `tempdir()`.
+  - `Remove mzMLs?` a boolean determining whether the mzMLs should be removed
+  after being written into the database. Useful if using CD to do mzML conversion
+  already or if you'd rather not have to convert them twice. Not recommended
+  for use without specifying `Intermediate mzML write path`.
+  
+---
+
+README last updated Jan 2, 2026.
 
