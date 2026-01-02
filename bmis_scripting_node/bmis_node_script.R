@@ -17,7 +17,7 @@ v <- lapply(CD_json_in$Tables, function(table_info_i){
 
 save.image(file=paste0(node_dev_dir, project_dir, "/node_envir.RData"))
 
-# load(paste0(node_dev_dir, project_dir, "/node_envir.RData"))
+load(paste0(node_dev_dir, project_dir, "/node_envir.RData"))
 
 
 options(tidyverse.quiet = TRUE)
@@ -148,8 +148,7 @@ best_matched_IS <- all_cvs %>%
 
 BMISed_areas <- best_matched_IS %>%
   select(`Compounds ID`, Name, Name_IS) %>%
-  filter(Name=="Glycine betaine") %>%
-  left_join(Compounds_long %>% select(Name, Area, `File Name`)) %>%
+  left_join(Compounds_long %>% select(Name, Area, `File Name`), by = "Name") %>%
   left_join(IS_areas, by = join_by(Name_IS==Name, `File Name`), suffix = c("", "_IS")) %>%
   mutate(norm_area=(Area/Area_IS)*mean(Area_IS), .by = `Compounds ID`) %>%
   select(`Compounds ID`, Name, Name_IS, `File Name`, norm_area)
@@ -164,9 +163,10 @@ matched_names <- data.frame(
 )
 wide_BMIS <- BMISed_areas %>%
   left_join(matched_names, by=join_by(`File Name`==patched), suffix = c(" patched", "")) %>%
+  mutate(`File Name`=paste("BMISed", `File Name`)) %>%
   select(`Compounds ID`, BMIS=Name_IS, `File Name`, norm_area) %>%
   pivot_wider(names_from = `File Name`, values_from = norm_area)
-data.output <- left_join(Compounds, wide_BMIS, by = `Compounds ID`)
+data.output <- left_join(Compounds, wide_BMIS, by = "Compounds ID")
 
 CD_json_out <- CD_json_in
 # Add new BMIS column to JSON structure using boilerplate method
