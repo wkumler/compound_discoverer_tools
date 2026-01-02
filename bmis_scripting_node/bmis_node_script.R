@@ -146,41 +146,72 @@ best_matched_IS <- all_cvs %>%
   slice(1) %>%
   ungroup()
 
-# best_matched_IS %>%
-#   select(`Compounds ID`, Name, Name_IS) %>%
-#   filter(Name=="Glycine betaine") %>%
-#   left_join(Compounds_long %>% select(Name, Area, `File Name`)) %>%
-#   left_join(IS_areas, by = join_by(Name_IS==Name, `File Name`), suffix = c("", "_IS")) %>%
-#   mutate(norm_area=(Area/Area_IS)*mean(Area_IS), .by = `Compounds ID`) %>%
-#   select(`Compounds ID`, Name, Name_IS, `File Name`, norm_area)
+BMISed_areas <- best_matched_IS %>%
+  select(`Compounds ID`, Name, Name_IS) %>%
+  filter(Name=="Glycine betaine") %>%
+  left_join(Compounds_long %>% select(Name, Area, `File Name`)) %>%
+  left_join(IS_areas, by = join_by(Name_IS==Name, `File Name`), suffix = c("", "_IS")) %>%
+  mutate(norm_area=(Area/Area_IS)*mean(Area_IS), .by = `Compounds ID`) %>%
+  select(`Compounds ID`, Name, Name_IS, `File Name`, norm_area)
 
 
 
-
-
-# Boilerplate from MassList.R (from the webinar)
-# https://mycompounddiscoverer.com/scripting-node-webinar/
 # add result column to table
-data.output <- cbind(Compounds, "BMIS" = best_matched_IS$Name_IS)
+matched_names <- data.frame(
+  `File Name`=str_subset(colnames(Compounds), "^Area .* F\\d+"),
+  patched=unique(BMISed_areas$`File Name`), 
+  check.names = FALSE
+)
+wide_BMIS <- BMISed_areas %>%
+  left_join(matched_names, by=join_by(`File Name`==patched), suffix = c(" patched", "")) %>%
+  select(`Compounds ID`, BMIS=Name_IS, `File Name`, norm_area) %>%
+  pivot_wider(names_from = `File Name`, values_from = norm_area)
+data.output <- left_join(Compounds, wide_BMIS, by = `Compounds ID`)
 
-# Add new column to JSON structure.
+CD_json_out <- CD_json_in
+# Add new BMIS column to JSON structure using boilerplate method
 newcolumn <- list()
 newcolumn[[1]] = "BMIS"       ## ColumnName
 newcolumn[[2]] = FALSE      ## IsID
 newcolumn[[3]] = "String"    ## DataType
 newcolumn[[4]] <- list(PositionAfter="Polarity")    ## Options
-names(newcolumn) <- c("ColumnName", "IsID", "DataType", "Options") 
-CD_json_in$Tables[[1]]$ColumnDescriptions[[length(CD_json_in$Tables[[1]]$ColumnDescriptions) + 1]] <- newcolumn
+names(newcolumn) <- c("ColumnName", "IsID", "DataType", "Options")
+CD_json_out$Tables[[1]]$ColumnDescriptions <- c(CD_json_out$Tables[[1]]$ColumnDescriptions, list(newcolumn))
+
+# Thus, for each BMISed area column I need to write out a structure that looks like:
+# {
+#   "ColumnName":"BMISed Area 250908_Blk_Blk_15raw F1",
+#   "ID":"",
+#   "DataType":"Float",
+#   "Options":{
+#     "DataGroupName":"BMISed Area"
+#   }
+# }
+# And then I can append those columns and the associated names to the Compounds table
+new_col_descs <- lapply(matched_names$`File Name`, function(filename_i){
+  list(
+    ColumnName=paste("BMISed", filename_i),
+    IsID=FALSE,
+    DataType="Float",
+    Options=list(
+      DataGroupName="BMISed Area"
+    )
+  )
+})
+CD_json_out$Tables[[1]]$ColumnDescriptions <- c(CD_json_out$Tables[[1]]$ColumnDescriptions, new_col_descs)
+
+
+
 
 # Write modified table to temporary folder.
-datafile <- CD_json_in$Tables[[1]]$DataFile
+datafile <- CD_json_out$Tables[[1]]$DataFile
 resultout <- gsub(".txt", ".out.txt", datafile)
 write.table(data.output, file = resultout, sep='\t', row.names = FALSE)
 
 # Write out node_response.json file - use same file as node_args.json but change the pathway input file to the new one
-CD_json_in$Tables[[1]]$DataFile <- resultout
-jsonOutFile <- CD_json_in$ExpectedResponsePath
-responseJSON <- toJSON(CD_json_in, indent=1, method="C")
+CD_json_out$Tables[[1]]$DataFile <- resultout
+jsonOutFile <- CD_json_out$ExpectedResponsePath
+responseJSON <- toJSON(CD_json_out, indent=1, method="C")
 
 # responseJSON has incorrect format for the empty Options lists.  Will use a regular expression to find and replace the [\n\n\] with the {}
 responseJSON2 <- gsub("\\[\n\n[[:blank:]]+\\]", "{ }", responseJSON)
