@@ -76,22 +76,22 @@ pooled_IS <- Compounds_long %>%
       mutate(Area=ifelse(pooled_type=="Full", 1, 0.5))
   )
 
-ggplot(pooled_IS) +
-  geom_boxplot(aes(x=pooled_type, y=Area)) +
-  geom_hline(yintercept = 0) +
-  facet_wrap(~Name, scales="free_y", ncol=2) +
-  theme_bw()
-pooled_IS %>%
-  mutate(`File Name`=str_remove(`File Name`, half_v_full_regex)) %>%
-  pivot_wider(names_from = pooled_type, values_from=Area) %>%
-  ggplot() +
-  geom_point(aes(x=Full, y=Half, color=Name)) +
-  geom_abline(slope = 1, intercept = 0) +
-  scale_x_log10() +
-  scale_y_log10() +
-  coord_equal() +
-  theme(legend.position = "top") +
-  guides(color=guide_legend(ncol = 2))
+# ggplot(pooled_IS) +
+#   geom_boxplot(aes(x=pooled_type, y=Area)) +
+#   geom_hline(yintercept = 0) +
+#   facet_wrap(~Name, scales="free_y", ncol=2) +
+#   theme_bw()
+# pooled_IS %>%
+#   mutate(`File Name`=str_remove(`File Name`, half_v_full_regex)) %>%
+#   pivot_wider(names_from = pooled_type, values_from=Area) %>%
+#   ggplot() +
+#   geom_point(aes(x=Full, y=Half, color=Name)) +
+#   geom_abline(slope = 1, intercept = 0) +
+#   scale_x_log10() +
+#   scale_y_log10() +
+#   coord_equal() +
+#   theme(legend.position = "top") +
+#   guides(color=guide_legend(ncol = 2))
 
 
 IS_areas <- Compounds_long %>%
@@ -119,14 +119,14 @@ all_cvs <- Compounds_long %>%
 
 IS_cvs <- all_cvs %>%
   filter(str_detect(Name, internal_standard_regex))
-ggplot(IS_cvs) +
-  geom_point(aes(x=pooled_cv, y=all_cv, color=Name_IS)) +
-  geom_point(aes(x=pooled_cv, y=all_cv), data=subset(IS_cvs, Name_IS=="None"), 
-             color="black", size=2) +
-  geom_vline(aes(xintercept=pooled_cv), data=subset(IS_cvs, Name_IS=="None")) +
-  geom_vline(aes(xintercept=pooled_cv*(1-min_improvement)), data=subset(IS_cvs, Name_IS=="None"), 
-             linetype="dashed") +
-  facet_wrap(~Name)
+# ggplot(IS_cvs) +
+#   geom_point(aes(x=pooled_cv, y=all_cv, color=Name_IS)) +
+#   geom_point(aes(x=pooled_cv, y=all_cv), data=subset(IS_cvs, Name_IS=="None"), 
+#              color="black", size=2) +
+#   geom_vline(aes(xintercept=pooled_cv), data=subset(IS_cvs, Name_IS=="None")) +
+#   geom_vline(aes(xintercept=pooled_cv*(1-min_improvement)), data=subset(IS_cvs, Name_IS=="None"), 
+#              linetype="dashed") +
+#   facet_wrap(~Name)
 
 # If the compound has a matched IS
 #   IS should be the matched IS
@@ -145,13 +145,13 @@ best_matched_IS <- all_cvs %>%
   slice(1) %>%
   ungroup()
 
-best_matched_IS %>%
-  select(`Compounds ID`, Name, Name_IS) %>%
-  filter(Name=="Glycine betaine") %>%
-  left_join(Compounds_long %>% select(Name, Area, `File Name`)) %>%
-  left_join(IS_areas, by = join_by(Name_IS==Name, `File Name`), suffix = c("", "_IS")) %>%
-  mutate(norm_area=(Area/Area_IS)*mean(Area_IS), .by = `Compounds ID`) %>%
-  select(`Compounds ID`, Name, Name_IS, `File Name`, norm_area)
+# best_matched_IS %>%
+#   select(`Compounds ID`, Name, Name_IS) %>%
+#   filter(Name=="Glycine betaine") %>%
+#   left_join(Compounds_long %>% select(Name, Area, `File Name`)) %>%
+#   left_join(IS_areas, by = join_by(Name_IS==Name, `File Name`), suffix = c("", "_IS")) %>%
+#   mutate(norm_area=(Area/Area_IS)*mean(Area_IS), .by = `Compounds ID`) %>%
+#   select(`Compounds ID`, Name, Name_IS, `File Name`, norm_area)
 
 
 
