@@ -17,7 +17,7 @@ v <- lapply(CD_json_in$Tables, function(table_info_i){
 
 save.image(file=paste0(node_dev_dir, project_dir, "/node_envir.RData"))
 
-load(paste0(node_dev_dir, project_dir, "/node_envir.RData"))
+# load(paste0(node_dev_dir, project_dir, "/node_envir.RData"))
 
 
 options(tidyverse.quiet = TRUE)
@@ -148,7 +148,7 @@ best_matched_IS <- all_cvs %>%
 
 BMISed_areas <- best_matched_IS %>%
   select(`Compounds ID`, Name, Name_IS) %>%
-  left_join(Compounds_long %>% select(Name, Area, `File Name`), by = "Name") %>%
+  left_join(Compounds_long %>% select(`Compounds ID`, Name, Area, `File Name`), by = join_by(`Compounds ID`, Name)) %>%
   left_join(IS_areas, by = join_by(Name_IS==Name, `File Name`), suffix = c("", "_IS")) %>%
   mutate(norm_area=(Area/Area_IS)*mean(Area_IS), .by = `Compounds ID`) %>%
   select(`Compounds ID`, Name, Name_IS, `File Name`, norm_area)
@@ -194,7 +194,7 @@ new_col_descs <- lapply(matched_names$`File Name`, function(filename_i){
     IsID=FALSE,
     DataType="Float",
     Options=list(
-      DataGroupName="BMISed Area"
+      DataGroupName="NormArea"
     )
   )
 })
