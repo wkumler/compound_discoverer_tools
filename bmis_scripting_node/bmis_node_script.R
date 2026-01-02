@@ -168,7 +168,7 @@ newcolumn <- list()
 newcolumn[[1]] = "BMIS"       ## ColumnName
 newcolumn[[2]] = FALSE      ## IsID
 newcolumn[[3]] = "String"    ## DataType
-newcolumn[[4]] <- list(PositionAfter="Tags")    ## Options
+newcolumn[[4]] <- list(PositionAfter="Polarity")    ## Options
 names(newcolumn) <- c("ColumnName", "IsID", "DataType", "Options") 
 CD_json_in$Tables[[1]]$ColumnDescriptions[[length(CD_json_in$Tables[[1]]$ColumnDescriptions) + 1]] <- newcolumn
 
