@@ -164,19 +164,20 @@ matched_names <- data.frame(
 wide_BMIS <- BMISed_areas %>%
   left_join(matched_names, by=join_by(`File Name`==patched), suffix = c(" patched", "")) %>%
   mutate(`File Name`=paste("BMISed", `File Name`)) %>%
+  mutate(norm_area=as.integer(round(norm_area))) %>%
   select(`Compounds ID`, BMIS=Name_IS, `File Name`, norm_area) %>%
   pivot_wider(names_from = `File Name`, values_from = norm_area)
-data.output <- left_join(Compounds, wide_BMIS, by = "Compounds ID")
+# data.output <- left_join(Compounds, wide_BMIS, by = "Compounds ID")
+data.output <- wide_BMIS # Apparently CD only wants the new columns???
 
 CD_json_out <- CD_json_in
 # Add new BMIS column to JSON structure using boilerplate method
 newcolumn <- list()
 newcolumn[[1]] = "BMIS"       ## ColumnName
-newcolumn[[2]] = FALSE      ## IsID
+newcolumn[[2]] = ""      ## IsID
 newcolumn[[3]] = "String"    ## DataType
-newcolumn[[4]] <- list(PositionAfter="Polarity")    ## Options
-names(newcolumn) <- c("ColumnName", "IsID", "DataType", "Options")
-CD_json_out$Tables[[1]]$ColumnDescriptions <- c(CD_json_out$Tables[[1]]$ColumnDescriptions, list(newcolumn))
+newcolumn[[4]] <- list()    ## Options
+names(newcolumn) <- c("ColumnName", "ID", "DataType", "Options")
 
 # Thus, for each BMISed area column I need to write out a structure that looks like:
 # {
@@ -191,17 +192,14 @@ CD_json_out$Tables[[1]]$ColumnDescriptions <- c(CD_json_out$Tables[[1]]$ColumnDe
 new_col_descs <- lapply(matched_names$`File Name`, function(filename_i){
   list(
     ColumnName=paste("BMISed", filename_i),
-    IsID=FALSE,
-    DataType="Float",
+    ID="",
+    DataType="Int",
     Options=list(
       DataGroupName="NormArea"
     )
   )
 })
-CD_json_out$Tables[[1]]$ColumnDescriptions <- c(CD_json_out$Tables[[1]]$ColumnDescriptions, new_col_descs)
-
-
-
+CD_json_out$Tables[[1]]$ColumnDescriptions <- c(list(newcolumn), new_col_descs)
 
 # Write modified table to temporary folder.
 datafile <- CD_json_out$Tables[[1]]$DataFile
