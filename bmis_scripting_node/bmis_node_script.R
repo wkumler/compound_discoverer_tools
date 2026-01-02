@@ -15,16 +15,10 @@ v <- lapply(CD_json_in$Tables, function(table_info_i){
   write.csv(table_i, name_i, row.names = FALSE)
 })
 
-save.image(file=paste0(node_dev_dir, project_dir, "/node_envir.RData"))
+# save.image(file=paste0(node_dev_dir, project_dir, "/node_envir.RData"))
 
-# load("C:/Users/Ingalls Lab/Desktop/compound_discoverer_tools/duckdb_scripting_node/node_output.RData")
+load(paste0(node_dev_dir, project_dir, "/node_envir.RData"))
 
-
-
-
-
-
-# load("bmis_scripting_node/node_envir.RData")
 
 library(tidyverse)
 
@@ -142,10 +136,59 @@ ggplot(IS_cvs) +
 #   IS should be None
 # Otherwise it's the one that improves the CV the most
 
-all_cvs %>%
+best_matched_IS <- all_cvs %>%
   group_by(`Compounds ID`, Name) %>%
   mutate(has_IS=ifelse(Name=="", FALSE, str_detect(Name_IS, Name))) %>%
   mutate(already_good=ifelse(pooled_cv[Name_IS=="None"]<already_good & Name_IS=="None", TRUE, FALSE)) %>%
   mutate(pooled_cv=ifelse(Name_IS=="None", pooled_cv*(1-min_improvement), pooled_cv)) %>%
   arrange(!has_IS, !already_good, pooled_cv) %>%
-  slice(1)
+  slice(1) %>%
+  ungroup()
+
+best_matched_IS %>%
+  select(`Compounds ID`, Name, Name_IS) %>%
+  filter(Name=="Glycine betaine") %>%
+  left_join(Compounds_long %>% select(Name, Area, `File Name`)) %>%
+  left_join(IS_areas, by = join_by(Name_IS==Name, `File Name`), suffix = c("", "_IS")) %>%
+  mutate(norm_area=(Area/Area_IS)*mean(Area_IS), .by = `Compounds ID`) %>%
+  select(`Compounds ID`, Name, Name_IS, `File Name`, norm_area)
+
+
+
+
+
+# Boilerplate from MassList.R (from the webinar)
+# https://mycompounddiscoverer.com/scripting-node-webinar/
+# add result column to table
+data.output <- cbind(Compounds, "HMDB_ID" = HMDB_ID)
+
+# Add new column to JSON structure.
+newcolumn <- list()
+newcolumn[[1]] = "HMDB_ID"       ## ColumnName
+newcolumn[[2]] = FALSE      ## IsID
+newcolumn[[3]] = "String"    ## DataType
+newcolumn[[4]] <- list(PositionAfter="Mass List Matches")    ## Options
+names(newcolumn) <- c("ColumnName", "IsID", "DataType", "Options") 
+CD_json_in$Tables[[1]]$ColumnDescriptions[[length(CD_json_in$Tables[[1]]$ColumnDescriptions) + 1]] <- newcolumn
+
+
+# Remove all the other tables in the JSON so that only the new Compounds table is used
+for (j in seq(length(CD_json_in$Tables),2,-1) ) {
+  CD_json_in$Tables[j] <- NULL;
+}
+
+# Write modified table to temporary folder.
+datafile <- CD_json_in$Tables[[1]]$DataFile
+resultout <- gsub(".txt", ".out.txt", datafile)
+write.table(data.output, file = resultout, sep='\t', row.names = FALSE)
+
+# Write out node_response.json file - use same file as node_args.json but change the pathway input file to the new one
+CD_json_in$Tables[[1]]$DataFile = resultout
+jsonOutFile <- CD_json_in$ExpectedResponsePath
+responseJSON <- toJSON(CD_json_in, indent=1, method="C")
+
+# responseJSON has incorrect format for the empty Options lists.  Will use a regular expression to find and replace the [\n\n\] with the {}
+responseJSON2 <- gsub("\\[\n\n[[:blank:]]+\\]", "{ }", responseJSON)
+jsonfileconn <- file(jsonOutFile)
+writeLines(responseJSON2, jsonfileconn)
+close (jsonfileconn)
