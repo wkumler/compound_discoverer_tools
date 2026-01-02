@@ -15,11 +15,12 @@ v <- lapply(CD_json_in$Tables, function(table_info_i){
   write.csv(table_i, name_i, row.names = FALSE)
 })
 
-# save.image(file=paste0(node_dev_dir, project_dir, "/node_envir.RData"))
+save.image(file=paste0(node_dev_dir, project_dir, "/node_envir.RData"))
 
-load(paste0(node_dev_dir, project_dir, "/node_envir.RData"))
+# load(paste0(node_dev_dir, project_dir, "/node_envir.RData"))
 
 
+options(tidyverse.quiet = TRUE)
 library(tidyverse)
 
 colname_regex_str <- c(
