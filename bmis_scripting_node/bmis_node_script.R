@@ -160,21 +160,21 @@ best_matched_IS %>%
 # Boilerplate from MassList.R (from the webinar)
 # https://mycompounddiscoverer.com/scripting-node-webinar/
 # add result column to table
-data.output <- cbind(Compounds, "HMDB_ID" = HMDB_ID)
+data.output <- cbind(Compounds, "BMIS" = best_matched_IS$Name_IS)
 
 # Add new column to JSON structure.
 newcolumn <- list()
-newcolumn[[1]] = "HMDB_ID"       ## ColumnName
+newcolumn[[1]] = "BMIS"       ## ColumnName
 newcolumn[[2]] = FALSE      ## IsID
 newcolumn[[3]] = "String"    ## DataType
-newcolumn[[4]] <- list(PositionAfter="Mass List Matches")    ## Options
+newcolumn[[4]] <- list(PositionAfter="Tags")    ## Options
 names(newcolumn) <- c("ColumnName", "IsID", "DataType", "Options") 
 CD_json_in$Tables[[1]]$ColumnDescriptions[[length(CD_json_in$Tables[[1]]$ColumnDescriptions) + 1]] <- newcolumn
 
 
 # Remove all the other tables in the JSON so that only the new Compounds table is used
 for (j in seq(length(CD_json_in$Tables),2,-1) ) {
-  CD_json_in$Tables[j] <- NULL;
+  CD_json_in$Tables[j] <- NULL
 }
 
 # Write modified table to temporary folder.
@@ -183,7 +183,7 @@ resultout <- gsub(".txt", ".out.txt", datafile)
 write.table(data.output, file = resultout, sep='\t', row.names = FALSE)
 
 # Write out node_response.json file - use same file as node_args.json but change the pathway input file to the new one
-CD_json_in$Tables[[1]]$DataFile = resultout
+CD_json_in$Tables[[1]]$DataFile <- resultout
 jsonOutFile <- CD_json_in$ExpectedResponsePath
 responseJSON <- toJSON(CD_json_in, indent=1, method="C")
 
