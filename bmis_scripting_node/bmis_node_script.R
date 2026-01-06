@@ -3,22 +3,8 @@ message("Script starting!")
 
 library(rjson)
 CD_json_in <- fromJSON(file=commandArgs()[6])
-
-# node_dev_dir <- "C:/Users/Ingalls Lab/Desktop/compound_discoverer_tools"
-# project_dir <- "/bmis_scripting_node"
-# 
-# v <- lapply(CD_json_in$Tables, function(table_info_i){
-#   print(table_info_i$TableName)
-#   table_i <- read.table(table_info_i$DataFile, header=TRUE, check.names = FALSE)
-#   name_i <- paste0(node_dev_dir, project_dir, "/", table_info_i$TableName, ".csv")
-#   assign(x = gsub(" ", "_", table_info_i$TableName), table_i, envir = globalenv())
-#   # write.csv(table_i, name_i, row.names = FALSE)
-# })
-# 
-# save.image(file=paste0(node_dev_dir, project_dir, "/node_envir.RData"))
-
-# load(paste0(node_dev_dir, project_dir, "/node_envir.RData"))
-
+# saveRDS(CD_json_in, "~/../Desktop/CD_json_in.rds")
+# CD_json_in <- readRDS("~/../Desktop/CD_json_in.rds")
 
 options(tidyverse.quiet = TRUE)
 library(tidyverse)
@@ -41,6 +27,8 @@ colname_regex_str <- c(
   paste0(collapse = "|") %>%
   paste0("^(", ., ") ")
 
+Compounds <- read.table(CD_json_in$Tables[[1]]$DataFile, header=TRUE, check.names = FALSE)
+
 Compounds_long <- Compounds %>%
   # slice(1) %>%
   # select(`Compounds ID`, matches("^(Area|Peak Rating) ")) %>%
@@ -53,13 +41,13 @@ Compounds_long <- Compounds %>%
     names_sep = " ",
     values_drop_na = FALSE
   ) %>%
-  filter(`File Name`!="Max")
+  filter(`File Name`!="(Max.)")
 
 internal_standard_regex <- CD_json_in$NodeParameters$`Internal standard regex`
 pooled_sample_regex <- CD_json_in$NodeParameters$`Pooled sample regex`
 half_v_full_regex <- CD_json_in$NodeParameters$`Dilution regex`
-min_improvement <- CD_json_in$NodeParameters$`Minimal improvement threshold`
-already_good <- CD_json_in$NodeParameters$`Already good enough threshold`
+min_improvement <- as.numeric(CD_json_in$NodeParameters$`Minimal improvement threshold`)
+already_good <- as.numeric(CD_json_in$NodeParameters$`Already good enough threshold`)
 
 # internal_standard_regex <- ", \\d"
 # pooled_sample_regex <- "_Poo_"
@@ -163,7 +151,7 @@ BMISed_areas <- best_matched_IS %>%
 
 # add result column to table
 matched_names <- data.frame(
-  `File Name`=str_subset(colnames(Compounds), "^Area .* F\\d+"),
+  `File Name`=str_subset(colnames(Compounds), "^Area .* (F\\d+)"),
   patched=unique(BMISed_areas$`File Name`), 
   check.names = FALSE
 )
