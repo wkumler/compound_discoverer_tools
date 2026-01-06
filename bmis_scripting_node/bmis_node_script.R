@@ -1,13 +1,13 @@
 
-message("Script starting!")
-
-library(rjson)
-CD_json_in <- fromJSON(file=commandArgs()[6])
-# saveRDS(CD_json_in, "~/../Desktop/CD_json_in.rds")
-# CD_json_in <- readRDS("~/../Desktop/CD_json_in.rds")
+print("Script starting!")
 
 options(tidyverse.quiet = TRUE)
 library(tidyverse)
+suppressWarnings(library(rjson))
+
+CD_json_in <- fromJSON(file=commandArgs()[6])
+# saveRDS(CD_json_in, "~/../Desktop/CD_json_in.rds")
+# CD_json_in <- readRDS("~/../Desktop/CD_json_in.rds")
 
 colname_regex_str <- c(
   "Area",
@@ -41,7 +41,7 @@ Compounds_long <- Compounds %>%
     names_sep = " ",
     values_drop_na = FALSE
   ) %>%
-  filter(`File Name`!="(Max.)")
+  filter(`File Name`!="Max")
 
 internal_standard_regex <- CD_json_in$NodeParameters$`Internal standard regex`
 pooled_sample_regex <- CD_json_in$NodeParameters$`Pooled sample regex`
@@ -87,7 +87,6 @@ pooled_IS <- Compounds_long %>%
 #   coord_equal() +
 #   theme(legend.position = "top") +
 #   guides(color=guide_legend(ncol = 2))
-
 
 IS_areas <- Compounds_long %>%
   filter(str_detect(Name, internal_standard_regex)) %>%
@@ -151,7 +150,7 @@ BMISed_areas <- best_matched_IS %>%
 
 # add result column to table
 matched_names <- data.frame(
-  `File Name`=str_subset(colnames(Compounds), "^Area .* (F\\d+)"),
+  `File Name`=str_subset(colnames(Compounds), "^Area .* F\\d+"),
   patched=unique(BMISed_areas$`File Name`), 
   check.names = FALSE
 )
@@ -168,10 +167,10 @@ CD_json_out <- CD_json_in
 # Add new BMIS column to JSON structure using boilerplate method
 newcolumn <- list()
 newcolumn[[1]] = "BMIS"       ## ColumnName
-newcolumn[[2]] = ""      ## IsID
+newcolumn[[2]] = FALSE     ## IsID
 newcolumn[[3]] = "String"    ## DataType
 newcolumn[[4]] <- list()    ## Options
-names(newcolumn) <- c("ColumnName", "ID", "DataType", "Options")
+names(newcolumn) <- c("ColumnName", "IsID", "DataType", "Options")
 
 # Thus, for each BMISed area column I need to write out a structure that looks like:
 # {
@@ -186,13 +185,14 @@ names(newcolumn) <- c("ColumnName", "ID", "DataType", "Options")
 new_col_descs <- lapply(matched_names$`File Name`, function(filename_i){
   list(
     ColumnName=paste("BMISed", filename_i),
-    ID="",
+    IsID=FALSE,
     DataType="Int",
     Options=list(
       DataGroupName="NormArea"
     )
   )
 })
+# CD_json_out$Tables[[1]]$ColumnDescriptions <- c(CD_json_out$Tables[[1]]$ColumnDescriptions, list(newcolumn), new_col_descs)
 CD_json_out$Tables[[1]]$ColumnDescriptions <- c(list(newcolumn), new_col_descs)
 
 # Write modified table to temporary folder.
