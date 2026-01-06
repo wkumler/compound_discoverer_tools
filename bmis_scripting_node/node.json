@@ -16,7 +16,7 @@
     "ExecutableCommandLineArguments": "\"C:\\Program Files\\Thermo\\Compound Discoverer 3.4\\Tools\\Scripts\\bmis_norm\\bmis_node_script.R\" %NODEARGS% %PARAMETERS%",
     "ExecutablePath": "C:\\Program Files\\R\\R-4.5.1\\bin\\Rscript.exe",
     "ExpectResponse": true,
-    "UseRFriendlyNames": false,
+    "UseRFriendlyNames": true,
     "RequestedTablesAndColumns": "Compounds"
   },
   "Parameters":[
