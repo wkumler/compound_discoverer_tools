@@ -1,0 +1,67 @@
+{
+  "Guid": "d3f4b5ca-361f-41d4-8700-8fd2127ba7d0",
+  "Category": "Ingalls Lab custom nodes",
+  "Name": "Known molecule quantification",
+  "Description": "Converts peak areas into absolute concentrations for molecules that have an authentic standard run alongside the samples.",
+  "Version": 1,
+  "Publisher": null,
+  "DevelopedBy": "William Kumler",
+  "Homepage": "https://github.com/wkumler/compound_discoverer_tools/tree/main/quant_scripting_node",
+  "LegalInformation": null,
+  "WorkflowType": "Post-Processing",
+  "ImageLarge": "IMG_32x32.png",
+  "ImageSmall": "IMG_16x16.png",
+  "License": null,
+  "ScriptProcessorArguments": {
+    "ExecutableCommandLineArguments": "\"C:\\Program Files\\Thermo\\Compound Discoverer 3.4\\Tools\\Scripts\\ingalls_quant\\quant_node_script.R\" %NODEARGS% %PARAMETERS%",
+    "ExecutablePath": "C:\\Program Files\\R\\R-4.5.1\\bin\\Rscript.exe",
+    "ExpectResponse": true,
+    "UseRFriendlyNames": true,
+    "RequestedTablesAndColumns": "Compounds"
+  },
+  "FINISHED HERE":"All the below is directly from the BMIS node",
+  "Parameters":[
+    {
+      "Category":"General",
+      "DataType":"String",
+      "Name":"Internal standard regex",
+      "Default":", \\d",
+      "Description":"A regular expression used to detect the internal standards that should be used for normalization. E.g. if all IS names have the pattern Name, 13C[digits] you might use \", 13C\". This is passed directly to str_detect in R."
+    },
+    {
+      "Category":"General",
+      "DataType":"String",
+      "Name":"Pooled sample regex",
+      "Default":"_Poo_",
+      "Description":"BMIS operates on pooled samples. Define a regular expression here that allows for their detection from the sample name, e.g. \"_pooled_\". Passed directly to str_detect."
+    },
+    {
+      "Category":"General",
+      "DataType":"String",
+      "Name":"Dilution regex",
+      "Default":"Half|Full",
+      "Description":"BMIS operates on the difference between full-strength and half-strength samples. Define a regular expression here that allows for their distinction from the sample name, e.g. \"Half|Full\". Passed directly to str_extract and must return \"Full\" for those samples that shouldn't be diluted."
+    },
+    {
+      "Category":"General",
+      "DataType":"Float",
+      "Name":"Minimal improvement threshold",
+      "Default":0.4,
+      "Description":"BMIS requires that normalizing to an internal standard result in a given amount of improvement in the RSD, e.g. 40%. Define that threshold here."
+    },
+    {
+      "Category":"General",
+      "DataType":"Float",
+      "Name":"Already good enough threshold",
+      "Default":0.1,
+      "Description":"BMIS avoids normalizing samples that already have a low RSD by skipping samples with an RSD below a given threshold. Define the RSD of an \"already good\" compound here."
+    },
+    {
+      "Category":"General",
+      "DataType":"Boolean",
+      "Name":"Exclude standards",
+      "Default":true,
+      "Description":"Exclude the standard files (matching '_Std_') from the normalization?"
+    }
+  ]
+}
