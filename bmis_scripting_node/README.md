@@ -40,8 +40,6 @@ then close and reopen CD. You can check that it worked by looking at Help->About
 under the Nodes list. More details 
 [here](https://docs.thermofisher.com/r/Proteome-Discoverer-3.2-User-Guide/1325241867v1en-US1614263563).
 
-### Stopped updating README here on 1/2/2025
-
 The node can then be found at the bottom of the node list in the workflow builder
 under the "Ingalls Lab custom nodes" section and treated like any other CD node.
 
@@ -51,31 +49,34 @@ The node takes several arguments that allow you to control how it operates.
 
 Under "General":
 
-  - `Archive Datafiles` exports the files used by Compound Discoverer during this node's operation
-  (i.e. the Input Files table). Required by CD but not super useful imo.
-  - `Database type` determines which kind of database is written out. The two supported ones
-  at the moment are DuckDB and SQLite. These are driven by the associated R packages
-  `duckdb` and `RSQLite` which must be installed to export the files properly.
-  - `Output database pathname` controls where the database is written. The full path is required 
-  including the database name at the end of it (e.g. 'C:/Users/Will/Desktop/msdata.duckdb')
-  because CD launches R from an awkward spot and controlling the working directory can be difficult.
-  Single quotes are required if the path name has spaces in it and are a good idea otherwise as well.
-  - `MS levels` determine which MS levels are processed. These are parsed by `msconvert` so their 
-  ["int-set"](https://proteowizard.sourceforge.io/tools/msconvert.html)
-  syntax applies. The default setting processes all MS levels and writes them to disk.
-  - `Sort by` controls whether the data written into the database is sorted first. This can massively
-  improve DuckDB's performance but has minimal affect on SQLite.
-  - `Database file subset` because sometimes the entire dataset doesn't need to be written into
-  the database. This parameter accepts any regex string and passes it along to `grepl`. The default
-  setting parses all of the files. The regex is run on the full path name so you can include the
-  names of directories containing the raw data as well as the filename itself. For example, if you
-  had authentic standards that all had "Std" in the name you could use `Std` as the argument here
-  and only files with "Std" somewhere in the name would be written to the database.
+  - `Internal standard regex` determines which compounds are flagged as internal 
+  standards using a regular expression in the CD-assigned compound name. Ingalls
+  internal standards are all isotopically labeled and named using the compound
+  name followed by a comma, space, and then either 2H, 13C or 15N (or other numeric).
+  We can thus identify our internal standards with the regular expression `, \\d`
+  where `\\d` stands for any number. This is passed directly to `str_detect`
+  internally.
+  - `Pooled sample regex` determines which compounds are flagged as internal 
+  standards using a regular expression in the file name. Ingalls pooled samples
+  are identified with a `_Poo_` in the sample name so this can be used to ID
+  them with `str_detect`.
+  - `Dilution regex` determines which samples are full strength or 1:1 diluted.
+  BMIS operates on the difference in peak area between these two so correctly
+  identifying which ones are diluted is critical. The parameter here should
+  return either "Full" or "Half" when the file name is passed to `str_extract`
+  internally.
+  - `Exclude standards` is a boolean option allowing for a slightly cleaner
+  output in CD. Standards in water don't have any internal standards added
+  so they can't be normalized to such. This option matches against the `_Std_`
+  character match in the file name if True.
+  - `Minimal improvement threshold` refers to the required decrease in RSD that
+  the intenal standard normalization must produce for it to be "acceptable". See
+  the BMIS paper for more details (link above).
+  - `Already good enough threshold` refers to the RSD below which compounds can
+  be considered as already having a low enough RSD and for which normalization
+  is unlikely to help. See the BMIS paper for more details (link above).
 
-Under "Advanced":
+---
 
-  - `Centroid?`
-  - `msconvert path`
-  - `Intermediate mzML write path`
-  - `Remove mzMLs?`
+README last updated Jan 6th, 2026.
 
