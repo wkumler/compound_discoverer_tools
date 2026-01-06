@@ -54,6 +54,13 @@
       "Name":"Already good enough threshold",
       "Default":0.1,
       "Description":"BMIS avoids normalizing samples that already have a low RSD by skipping samples with an RSD below a given threshold. Define the RSD of an \"already good\" compound here."
+    },
+    {
+      "Category":"General",
+      "DataType":"Boolean",
+      "Name":"Exclude standards",
+      "Default":true,
+      "Description":"Exclude the standard files (matching '_Std_') from the normalization?"
     }
   ]
 }

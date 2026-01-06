@@ -29,6 +29,20 @@ colname_regex_str <- c(
 
 Compounds <- read.table(CD_json_in$Tables[[1]]$DataFile, header=TRUE, check.names = FALSE)
 
+internal_standard_regex <- CD_json_in$NodeParameters$`Internal standard regex`
+pooled_sample_regex <- CD_json_in$NodeParameters$`Pooled sample regex`
+half_v_full_regex <- CD_json_in$NodeParameters$`Dilution regex`
+exclude_std <- as.logical(CD_json_in$NodeParameters$`Exclude standards`)
+min_improvement <- as.numeric(CD_json_in$NodeParameters$`Minimal improvement threshold`)
+already_good <- as.numeric(CD_json_in$NodeParameters$`Already good enough threshold`)
+# internal_standard_regex <- ", \\d"
+# pooled_sample_regex <- "_Poo_"
+# half_v_full_regex <- "Half|Full"
+# min_improvement <- 0.2
+# already_good <- 0.1
+# exclude_std <- TRUE
+
+
 Compounds_long <- Compounds %>%
   # slice(1) %>%
   # select(`Compounds ID`, matches("^(Area|Peak Rating) ")) %>%
@@ -42,18 +56,10 @@ Compounds_long <- Compounds %>%
     values_drop_na = FALSE
   ) %>%
   filter(`File Name`!="Max")
-
-internal_standard_regex <- CD_json_in$NodeParameters$`Internal standard regex`
-pooled_sample_regex <- CD_json_in$NodeParameters$`Pooled sample regex`
-half_v_full_regex <- CD_json_in$NodeParameters$`Dilution regex`
-min_improvement <- as.numeric(CD_json_in$NodeParameters$`Minimal improvement threshold`)
-already_good <- as.numeric(CD_json_in$NodeParameters$`Already good enough threshold`)
-
-# internal_standard_regex <- ", \\d"
-# pooled_sample_regex <- "_Poo_"
-# half_v_full_regex <- "Half|Full"
-# min_improvement <- 0.2
-# already_good <- 0.1
+if(exclude_std){
+  Compounds_long <- Compounds_long %>%
+    filter(!str_detect(`File Name`, "_Std_"))
+}
 
 all_IS <- Compounds_long %>%
   filter(str_detect(Name, internal_standard_regex)) %>%
@@ -149,11 +155,22 @@ BMISed_areas <- best_matched_IS %>%
 
 
 # add result column to table
-matched_names <- data.frame(
-  `File Name`=str_subset(colnames(Compounds), "^Area .* F\\d+"),
-  patched=unique(BMISed_areas$`File Name`), 
-  check.names = FALSE
-)
+if(exclude_std){
+  chosen_fnames <- colnames(Compounds) %>%
+    str_subset("^Area .* F\\d+") %>%
+    str_subset("_Std_", negate = TRUE)
+  matched_names <- data.frame(
+    `File Name`=chosen_fnames,
+    patched=unique(BMISed_areas$`File Name`), 
+    check.names = FALSE
+  )
+} else {
+  matched_names <- data.frame(
+    `File Name`=str_subset(colnames(Compounds), "^Area .* F\\d+"),
+    patched=unique(BMISed_areas$`File Name`), 
+    check.names = FALSE
+  )
+}
 wide_BMIS <- BMISed_areas %>%
   left_join(matched_names, by=join_by(`File Name`==patched), suffix = c(" patched", "")) %>%
   mutate(`File Name`=paste("BMISed", `File Name`)) %>%
