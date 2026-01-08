@@ -9,6 +9,9 @@ CD_json_in <- fromJSON(file=commandArgs()[6])
 # saveRDS(CD_json_in, "~/../Desktop/CD_json_in.rds")
 # CD_json_in <- readRDS("~/../Desktop/CD_json_in.rds")
 
+# Compounds <- read.table(r"(C:\ProgramData\Thermo\Compound Discoverer 3.4\Scratch\Job190\BMISno(17)\ConsolidatedUnknownCompoundItem.txt)", header=TRUE, check.names = FALSE)
+# CD_json_in <- fromJSON(file = r"(C:\ProgramData\Thermo\Compound Discoverer 3.4\Scratch\Job190\BMISno(17)\node_args.json)")
+
 colname_regex_str <- c(
   "Area",
   "Gap Status",
@@ -28,6 +31,9 @@ colname_regex_str <- c(
   paste0("^(", ., ") ")
 
 Compounds <- read.table(CD_json_in$Tables[[1]]$DataFile, header=TRUE, check.names = FALSE)
+if(all(is.na(Compounds$Name))){
+  stop("No annotations present in Compounds table.")
+}
 
 internal_standard_regex <- CD_json_in$NodeParameters$`Internal standard regex`
 pooled_sample_regex <- CD_json_in$NodeParameters$`Pooled sample regex`
@@ -111,9 +117,9 @@ all_cvs <- Compounds_long %>%
   select(`Compounds ID`, Name, `File Name`, Area) %>%
   full_join(IS_areas, by="File Name", suffix = c("", "_IS"), relationship ="many-to-many") %>%
   mutate(pooled_samps=str_detect(`File Name`, pooled_sample_regex)) %>%
-  mutate(norm_area=(Area/Area_IS)*mean(Area_IS), .by = c(`Compounds ID`, Name, Name_IS)) %>%
-  summarise(all_cv=sd(norm_area)/mean(norm_area),
-            pooled_cv=sd(norm_area[pooled_samps])/mean(norm_area[pooled_samps]),
+  mutate(norm_area=(Area/Area_IS)*mean(Area_IS, na.rm=TRUE), .by = c(`Compounds ID`, Name, Name_IS)) %>%
+  summarise(all_cv=sd(norm_area, na.rm=TRUE)/mean(norm_area, na.rm=TRUE),
+            pooled_cv=sd(norm_area[pooled_samps], na.rm=TRUE)/mean(norm_area[pooled_samps], na.rm=TRUE),
             .by = c(`Compounds ID`, Name, Name_IS)) %>%
   arrange(`Compounds ID`, Name, pooled_cv)
 
@@ -149,7 +155,7 @@ BMISed_areas <- best_matched_IS %>%
   select(`Compounds ID`, Name, Name_IS) %>%
   left_join(Compounds_long %>% select(`Compounds ID`, Name, Area, `File Name`), by = join_by(`Compounds ID`, Name)) %>%
   left_join(IS_areas, by = join_by(Name_IS==Name, `File Name`), suffix = c("", "_IS")) %>%
-  mutate(norm_area=(Area/Area_IS)*mean(Area_IS), .by = `Compounds ID`) %>%
+  mutate(norm_area=(Area/Area_IS)*mean(Area_IS, na.rm=TRUE), .by = `Compounds ID`) %>%
   select(`Compounds ID`, Name, Name_IS, `File Name`, norm_area)
 
 
@@ -174,7 +180,6 @@ if(exclude_std){
 wide_BMIS <- BMISed_areas %>%
   left_join(matched_names, by=join_by(`File Name`==patched), suffix = c(" patched", "")) %>%
   mutate(`File Name`=paste("BMISed", `File Name`)) %>%
-  mutate(norm_area=as.integer(round(norm_area))) %>%
   select(`Compounds ID`, BMIS=Name_IS, `File Name`, norm_area) %>%
   pivot_wider(names_from = `File Name`, values_from = norm_area)
 # data.output <- left_join(Compounds, wide_BMIS, by = "Compounds ID")
@@ -203,9 +208,10 @@ new_col_descs <- lapply(matched_names$`File Name`, function(filename_i){
   list(
     ColumnName=paste("BMISed", filename_i),
     IsID=FALSE,
-    DataType="Int",
+    DataType="Float",
     Options=list(
-      DataGroupName="NormArea"
+      DataGroupName="NormArea",
+      FormatString="F0"
     )
   )
 })
