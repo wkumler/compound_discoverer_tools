@@ -9,10 +9,9 @@ CD_json_in <- fromJSON(file=commandArgs()[6])
 saveRDS(CD_json_in, "~/../Desktop/CD_json_in.rds")
 # CD_json_in <- readRDS("~/../Desktop/CD_json_in.rds")
 
-stop("Throwing error on purpose")
-
 colname_regex_str <- c(
   "Area",
+  "NormArea BMISed Area",
   "Gap Status",
   "Gap Fill Status",
   "PQF Zig-Zag Index",
@@ -31,19 +30,38 @@ colname_regex_str <- c(
 
 Compounds <- read.table(CD_json_in$Tables[[1]]$DataFile, header=TRUE, check.names = FALSE)
 
-internal_standard_regex <- CD_json_in$NodeParameters$`Internal standard regex`
-pooled_sample_regex <- CD_json_in$NodeParameters$`Pooled sample regex`
-half_v_full_regex <- CD_json_in$NodeParameters$`Dilution regex`
-exclude_std <- as.logical(CD_json_in$NodeParameters$`Exclude standards`)
-min_improvement <- as.numeric(CD_json_in$NodeParameters$`Minimal improvement threshold`)
-already_good <- as.numeric(CD_json_in$NodeParameters$`Already good enough threshold`)
-# internal_standard_regex <- ", \\d"
-# pooled_sample_regex <- "_Poo_"
-# half_v_full_regex <- "Half|Full"
-# min_improvement <- 0.2
-# already_good <- 0.1
-# exclude_std <- TRUE
+# internal_standard_regex <- CD_json_in$NodeParameters$`Internal standard regex`
+# pooled_sample_regex <- CD_json_in$NodeParameters$`Pooled sample regex`
+# half_v_full_regex <- CD_json_in$NodeParameters$`Dilution regex`
+# exclude_std <- as.logical(CD_json_in$NodeParameters$`Exclude standards`)
+# min_improvement <- as.numeric(CD_json_in$NodeParameters$`Minimal improvement threshold`)
+# already_good <- as.numeric(CD_json_in$NodeParameters$`Already good enough threshold`)
 
+stan_source <- "" # filename, commit number, or "" (pull down most recent)
+column_type <- "HILIC"
+recon_volume <- as.numeric(0.0004)
+filter_volume <- as.numeric(2)
+dilution_applied <- as.numeric(1)
+stan_regex <- "_Std_"
+matrix_regex <- "Matrix"
+
+# If empty, pull down most recent
+# If commit is referenced (either 6 chars or longer, alphanum, no slashes), expand to URL
+# Otherwise read file directly (either URL or file path)
+if(stan_source==""){
+  stan_source <- "https://github.com/IngallsLabUW/Ingalls_Standards/raw/refs/heads/master/Ingalls_Lab_Standards.csv"
+}
+if(!str_detect(stan_source, "\\/")){
+  # Assuming stan source is a commit if it doesn't look like a path
+  stan_source <- paste0("https://github.com/IngallsLabUW/Ingalls_Standards/raw/", stan_source, "/Ingalls_Lab_Standards.csv")
+}
+
+stan_data <- stan_source %>%
+  read_csv(show_col_types = FALSE) %>%
+  filter(Column==column_type) %>% #Match column type
+  filter(!is.na(HILIC_Mix)) %>% #Remove IS
+  mutate(Polarity=ifelse(z<0, "Negative", "Positive")) %>%
+  select(Compound_Name, Polarity, HILIC_Mix, Concentration_uM)
 
 Compounds_long <- Compounds %>%
   # slice(1) %>%
@@ -57,114 +75,41 @@ Compounds_long <- Compounds %>%
     names_sep = " ",
     values_drop_na = FALSE
   ) %>%
-  filter(`File Name`!="Max")
+  filter(`File Name`!="Max") %>%
+  filter(Name!="")
 
-all_IS <- Compounds_long %>%
-  filter(str_detect(Name, internal_standard_regex)) %>%
-  mutate(samp_type=ifelse(str_detect(`File Name`, pooled_sample_regex), "Pooled", "All")) %>%
-  select(Name, `File Name`, samp_type, Area)
+RFs <- Compounds_long %>%
+  filter(str_detect(`File Name`, stan_regex)) %>%
+  select(`Compounds ID`, Name, `File Name`, Polarity, Area) %>%
+  inner_join(stan_data, by = join_by(Name==Compound_Name, Polarity)) %>%
+  mutate(mix_type=ifelse(str_detect(`File Name`, HILIC_Mix), "correct_mix", "other_mix")) %>%
+  filter(str_detect(`File Name`, "Matrix")) %>%
+  select(`Compounds ID`, Name, Area, Concentration_uM, mix_type) %>%
+  pivot_wider(names_from = mix_type, values_from = Area, values_fn = mean) %>%
+  mutate(RF=(correct_mix-other_mix)/Concentration_uM) %>%
+  select(`Compounds ID`, RF)
 
-pooled_IS <- Compounds_long %>%
-  filter(str_detect(Name, internal_standard_regex)) %>%
-  filter(str_detect(`File Name`, pooled_sample_regex)) %>%
-  select(Name, `File Name`, Area) %>%
-  mutate(pooled_type=str_extract(`File Name`, half_v_full_regex)) %>%
-  bind_rows(
-    distinct(., `File Name`, pooled_type) %>% 
-      mutate(Name="None") %>%
-      mutate(Area=ifelse(pooled_type=="Full", 1, 0.5))
-  )
-
-# ggplot(pooled_IS) +
-#   geom_boxplot(aes(x=pooled_type, y=Area)) +
-#   geom_hline(yintercept = 0) +
-#   facet_wrap(~Name, scales="free_y", ncol=2) +
-#   theme_bw()
-# pooled_IS %>%
-#   mutate(`File Name`=str_remove(`File Name`, half_v_full_regex)) %>%
-#   pivot_wider(names_from = pooled_type, values_from=Area) %>%
-#   ggplot() +
-#   geom_point(aes(x=Full, y=Half, color=Name)) +
-#   geom_abline(slope = 1, intercept = 0) +
-#   scale_x_log10() +
-#   scale_y_log10() +
-#   coord_equal() +
-#   theme(legend.position = "top") +
-#   guides(color=guide_legend(ncol = 2))
-
-IS_areas <- Compounds_long %>%
-  filter(str_detect(Name, internal_standard_regex)) %>%
-  select(`Compounds ID`, Name, `File Name`, Area) %>%
-  mutate(pooled_type=str_extract(`File Name`, half_v_full_regex)) %>%
-  mutate(pooled_type=ifelse(is.na(pooled_type), "Unpooled", pooled_type)) %>%
-  bind_rows(
-    distinct(., `File Name`, pooled_type) %>% 
-      mutate(`Compounds ID`=0) %>%
-      mutate(Name="None") %>%
-      mutate(Area=ifelse(pooled_type=="Half", 0.5, 1))
-  ) %>%
-  select(Name, `File Name`, Area)
-
-all_cvs <- Compounds_long %>%
-  select(`Compounds ID`, Name, `File Name`, Area) %>%
-  full_join(IS_areas, by="File Name", suffix = c("", "_IS"), relationship ="many-to-many") %>%
-  mutate(pooled_samps=str_detect(`File Name`, pooled_sample_regex)) %>%
-  mutate(norm_area=(Area/Area_IS)*mean(Area_IS), .by = c(`Compounds ID`, Name, Name_IS)) %>%
-  summarise(all_cv=sd(norm_area)/mean(norm_area),
-            pooled_cv=sd(norm_area[pooled_samps])/mean(norm_area[pooled_samps]),
-            .by = c(`Compounds ID`, Name, Name_IS)) %>%
-  arrange(`Compounds ID`, Name, pooled_cv)
-
-IS_cvs <- all_cvs %>%
-  filter(str_detect(Name, internal_standard_regex))
-# ggplot(IS_cvs) +
-#   geom_point(aes(x=pooled_cv, y=all_cv, color=Name_IS)) +
-#   geom_point(aes(x=pooled_cv, y=all_cv), data=subset(IS_cvs, Name_IS=="None"), 
-#              color="black", size=2) +
-#   geom_vline(aes(xintercept=pooled_cv), data=subset(IS_cvs, Name_IS=="None")) +
-#   geom_vline(aes(xintercept=pooled_cv*(1-min_improvement)), data=subset(IS_cvs, Name_IS=="None"), 
-#              linetype="dashed") +
-#   facet_wrap(~Name)
-
-# If the compound has a matched IS
-#   IS should be the matched IS
-# If the cv is already good (i.e. normalizing to dilution volume reduces cv below already_good threshold)
-#   IS should be None 
-# If the CV doesn't improve by at least min_improvement
-#   IS should be None
-# Otherwise it's the one that improves the CV the most
-
-best_matched_IS <- all_cvs %>%
-  group_by(`Compounds ID`, Name) %>%
-  mutate(has_IS=ifelse(Name=="", FALSE, str_detect(Name_IS, Name))) %>%
-  mutate(already_good=ifelse(pooled_cv[Name_IS=="None"]<already_good & Name_IS=="None", TRUE, FALSE)) %>%
-  mutate(pooled_cv=ifelse(Name_IS=="None", pooled_cv*(1-min_improvement), pooled_cv)) %>%
-  arrange(!has_IS, !already_good, pooled_cv) %>%
-  slice(1) %>%
-  ungroup()
-
-BMISed_areas <- best_matched_IS %>%
-  select(`Compounds ID`, Name, Name_IS) %>%
-  left_join(Compounds_long %>% select(`Compounds ID`, Name, Area, `File Name`), by = join_by(`Compounds ID`, Name)) %>%
-  left_join(IS_areas, by = join_by(Name_IS==Name, `File Name`), suffix = c("", "_IS")) %>%
-  mutate(norm_area=(Area/Area_IS)*mean(Area_IS), .by = `Compounds ID`) %>%
-  select(`Compounds ID`, Name, Name_IS, `File Name`, norm_area)
+quant_concs <- Compounds_long %>%
+  inner_join(RFs) %>%
+  mutate(conc_in_nM=NormArea_BMISed_Area/RF/filter_volume*recon_volume*1000*dilution_applied) %>%
+  select(`Compounds ID`, Name, Polarity, RF, `File Name`, conc_in_nM) %>%
+  # pivot_wider(names_from = c(Name, `Compounds ID`), values_from = conc_in_nM, names_glue = "{Name} ({`Compounds ID`})")
+  print()
 
 
 matched_names <- data.frame(
   `File Name`=str_subset(colnames(Compounds), "^Area .* F\\d+"),
-  patched=unique(BMISed_areas$`File Name`), 
+  patched=unique(quant_concs$`File Name`), 
   check.names = FALSE
 )
 
-wide_BMIS <- BMISed_areas %>%
+wide_quant <- quant_concs %>%
   left_join(matched_names, by=join_by(`File Name`==patched), suffix = c(" patched", "")) %>%
-  mutate(norm_area=as.integer(round(norm_area))) %>%
-  select(`Compounds ID`, BMIS=Name_IS, `File Name`, norm_area) %>%
-  pivot_wider(names_from = `File Name`, values_from = norm_area)
+  select(`Compounds ID`, RF, `File Name`, conc_in_nM) %>%
+  mutate(`File Name`=str_replace(`File Name`, "^Area ", "nM ")) %>%
+  pivot_wider(names_from = `File Name`, values_from = conc_in_nM)
 # data.output <- left_join(Compounds, wide_BMIS, by = "Compounds ID")
-data.output <- wide_BMIS # Apparently CD only wants the new columns???
-data.output <- data.frame(Compounds$`Compounds ID`, RF=1)
+data.output <- wide_quant # Apparently CD only wants the new columns???
 
 CD_json_out <- CD_json_in
 newcolumn <- list()
@@ -180,11 +125,11 @@ new_col_descs <- lapply(matched_names$`File Name`, function(filename_i){
     IsID=FALSE,
     DataType="Float",
     Options=list(
-      DataGroupName="nM in env"
+      DataGroupName="Conc."
     )
   )
 })
-# CD_json_out$Tables[[1]]$ColumnDescriptions <- c(list(newcolumn), new_col_descs)
+CD_json_out$Tables[[1]]$ColumnDescriptions <- c(list(newcolumn), new_col_descs)
 
 # Write modified table to temporary folder.
 datafile <- CD_json_out$Tables[[1]]$DataFile
