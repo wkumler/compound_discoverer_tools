@@ -19,49 +19,56 @@
     "UseRFriendlyNames": true,
     "RequestedTablesAndColumns": "Compounds"
   },
-  "FINISHED HERE":"All the below is directly from the BMIS node",
   "Parameters":[
     {
       "Category":"General",
       "DataType":"String",
-      "Name":"Internal standard regex",
-      "Default":", \\d",
-      "Description":"A regular expression used to detect the internal standards that should be used for normalization. E.g. if all IS names have the pattern Name, 13C[digits] you might use \", 13C\". This is passed directly to str_detect in R."
+      "Name":"Standard sheet source",
+      "Default":"",
+      "Description":"Where should the standards sheet be read from? Must contain Compound_Name (matching the Name column in the Compounds table), Column (HILIC, RP, CYANO, or C18), z (aka charge, mostly -1 or +1), and Concentration_uM (standard conc. in micromolar). Sources can be a local file, a full URL, or a commit in the Ingalls Standards Github."
     },
     {
       "Category":"General",
       "DataType":"String",
-      "Name":"Pooled sample regex",
-      "Default":"_Poo_",
-      "Description":"BMIS operates on pooled samples. Define a regular expression here that allows for their detection from the sample name, e.g. \"_pooled_\". Passed directly to str_detect."
+      "Name":"Column type",
+      "Default":"HILIC",
+      "SelectionValues": ["HILIC", "RP", "CYANO", "C18"],
+      "Description":"Chromatography column used for this dataset."
+    },
+    {
+      "Category":"General",
+      "DataType":"Float",
+      "Name":"Volume filtered (L)",
+      "Default":2,
+      "Description":"The volume of sample initially filtered, in liters. Used to calculate the degree to which the samples have been concentrated."
+    },
+    {
+      "Category":"General",
+      "DataType":"Float",
+      "Name":"Reconstitution volume (L)",
+      "Default":0.0004,
+      "Description":"The volume of solvent (in liters) into which samples were reconstituted after dry-down. Used to calculate the degree to which the samples have been concentrated."
+    },
+    {
+      "Category":"General",
+      "DataType":"Float",
+      "Name":"Dilution applied",
+      "Default":1,
+      "Description":"What degree of dilution was applied during sampling? Sometimes samples can be too concentrated to behave well on the column. The default, 1, means no dilution was performed. A value of 2 would indicate that the samples were diluted 1:1 with water, a value of 4 would indicate 2:1 with water. I think."
     },
     {
       "Category":"General",
       "DataType":"String",
-      "Name":"Dilution regex",
-      "Default":"Half|Full",
-      "Description":"BMIS operates on the difference between full-strength and half-strength samples. Define a regular expression here that allows for their distinction from the sample name, e.g. \"Half|Full\". Passed directly to str_extract and must return \"Full\" for those samples that shouldn't be diluted."
+      "Name":"Standard file regex",
+      "Default":"_Std_",
+      "Description":"How should the authentic standards be identified? In the Ingalls Lab, we include _Std_ in file names of the single-point standard curve so we can pass the '_Std_' regular expression to str_detect to identify them."
     },
     {
       "Category":"General",
-      "DataType":"Float",
-      "Name":"Minimal improvement threshold",
-      "Default":0.4,
-      "Description":"BMIS requires that normalizing to an internal standard result in a given amount of improvement in the RSD, e.g. 40%. Define that threshold here."
-    },
-    {
-      "Category":"General",
-      "DataType":"Float",
-      "Name":"Already good enough threshold",
-      "Default":0.1,
-      "Description":"BMIS avoids normalizing samples that already have a low RSD by skipping samples with an RSD below a given threshold. Define the RSD of an \"already good\" compound here."
-    },
-    {
-      "Category":"General",
-      "DataType":"Boolean",
-      "Name":"Exclude standards",
-      "Default":true,
-      "Description":"Exclude the standard files (matching '_Std_') from the normalization?"
+      "DataType":"String",
+      "Name":"Matrix regex",
+      "Default":"Matrix",
+      "Description":"How should the standards in a matrix be distinguished from the standards in water that are typically run alongside? Provide a regular expression here that will return True when passed to str_detect with the file names."
     }
   ]
 }
