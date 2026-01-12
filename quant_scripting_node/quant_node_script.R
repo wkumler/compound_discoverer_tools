@@ -30,20 +30,14 @@ colname_regex_str <- c(
 
 Compounds <- read.table(CD_json_in$Tables[[1]]$DataFile, header=TRUE, check.names = FALSE)
 
-# internal_standard_regex <- CD_json_in$NodeParameters$`Internal standard regex`
-# pooled_sample_regex <- CD_json_in$NodeParameters$`Pooled sample regex`
-# half_v_full_regex <- CD_json_in$NodeParameters$`Dilution regex`
-# exclude_std <- as.logical(CD_json_in$NodeParameters$`Exclude standards`)
-# min_improvement <- as.numeric(CD_json_in$NodeParameters$`Minimal improvement threshold`)
-# already_good <- as.numeric(CD_json_in$NodeParameters$`Already good enough threshold`)
+stan_source <- CD_json_in$NodeParameters$`Standard sheet source`
+column_type <- CD_json_in$NodeParameters$`Column type`
+recon_volume <- as.numeric(CD_json_in$NodeParameters$`Volume filtered (L)`)
+filter_volume <- as.numeric(CD_json_in$NodeParameters$`Reconstitution volume (L)`)
+dilution_applied <- as.numeric(CD_json_in$NodeParameters$`Dilution applied`)
+stan_regex <- CD_json_in$NodeParameters$`Standard file regex`
+matrix_regex <- CD_json_in$NodeParameters$`Matrix regex`
 
-stan_source <- "" # filename, commit number, or "" (pull down most recent)
-column_type <- "HILIC"
-recon_volume <- as.numeric(0.0004)
-filter_volume <- as.numeric(2)
-dilution_applied <- as.numeric(1)
-stan_regex <- "_Std_"
-matrix_regex <- "Matrix"
 
 # If empty, pull down most recent
 # If commit is referenced (either 6 chars or longer, alphanum, no slashes), expand to URL
@@ -56,10 +50,11 @@ if(!str_detect(stan_source, "\\/")){
   stan_source <- paste0("https://github.com/IngallsLabUW/Ingalls_Standards/raw/", stan_source, "/Ingalls_Lab_Standards.csv")
 }
 
-stan_data <- stan_source %>%
-  read_csv(show_col_types = FALSE) %>%
+stan_init <- read_csv(stan_source, show_col_types = FALSE)
+write_csv(stan_init, str_replace(CD_json_in$ResultFilePath, "\\.cdResult$", "_stdsheet.csv"))
+
+stan_data <- stan_init %>%
   filter(Column==column_type) %>% #Match column type
-  filter(!is.na(HILIC_Mix)) %>% #Remove IS
   mutate(Polarity=ifelse(z<0, "Negative", "Positive")) %>%
   select(Compound_Name, Polarity, HILIC_Mix, Concentration_uM)
 
@@ -83,18 +78,18 @@ RFs <- Compounds_long %>%
   select(`Compounds ID`, Name, `File Name`, Polarity, Area) %>%
   inner_join(stan_data, by = join_by(Name==Compound_Name, Polarity)) %>%
   mutate(mix_type=ifelse(str_detect(`File Name`, HILIC_Mix), "correct_mix", "other_mix")) %>%
-  filter(str_detect(`File Name`, "Matrix")) %>%
+  filter(str_detect(`File Name`, matrix_regex)) %>%
   select(`Compounds ID`, Name, Area, Concentration_uM, mix_type) %>%
   pivot_wider(names_from = mix_type, values_from = Area, values_fn = mean) %>%
   mutate(RF=(correct_mix-other_mix)/Concentration_uM) %>%
   select(`Compounds ID`, RF)
 
 quant_concs <- Compounds_long %>%
-  inner_join(RFs) %>%
+  inner_join(RFs, by=join_by(`Compounds ID`)) %>%
   mutate(conc_in_nM=NormArea_BMISed_Area/RF/filter_volume*recon_volume*1000*dilution_applied) %>%
-  select(`Compounds ID`, Name, Polarity, RF, `File Name`, conc_in_nM) %>%
-  # pivot_wider(names_from = c(Name, `Compounds ID`), values_from = conc_in_nM, names_glue = "{Name} ({`Compounds ID`})")
-  print()
+  select(`Compounds ID`, Name, Polarity, RF, `File Name`, conc_in_nM)
+# quant_concs %>%
+#   pivot_wider(names_from = c(Name, `Compounds ID`), values_from = conc_in_nM, names_glue = "{Name} ({`Compounds ID`})")
 
 
 matched_names <- data.frame(
@@ -116,12 +111,12 @@ newcolumn <- list()
 newcolumn[[1]] = "RF"       ## ColumnName
 newcolumn[[2]] = FALSE     ## IsID
 newcolumn[[3]] = "String"    ## DataType
-newcolumn[[4]] <- list()    ## Options
+newcolumn[[4]] <- list(FormatString="F0")    ## Options
 names(newcolumn) <- c("ColumnName", "IsID", "DataType", "Options")
 
 new_col_descs <- lapply(matched_names$`File Name`, function(filename_i){
   list(
-    ColumnName=filename_i,
+    ColumnName=str_replace(filename_i, "^Area ", "nM "),
     IsID=FALSE,
     DataType="Float",
     Options=list(
