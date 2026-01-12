@@ -25,7 +25,7 @@
       "DataType":"String",
       "Name":"Standard sheet source",
       "Default":"",
-      "Description":"Where should the standards sheet be read from? Must contain Compound_Name (matching the Name column in the Compounds table), Column (HILIC, RP, CYANO, or C18), z (aka charge, mostly -1 or +1), and Concentration_uM (standard conc. in micromolar). Sources can be a local file, a full URL, or a commit in the Ingalls Standards Github."
+      "Description":"Where should the standards sheet be read from? Must contain Compound_Name (matching the Name column in the Compounds table), Column (HILIC, RP, CYANO, or C18), z (aka charge, mostly -1 or +1), and Concentration_uM (standard conc. in micromolar). Sources can be a local file (must include the absolute path), a full URL, or a commit in the Ingalls Standards Github."
     },
     {
       "Category":"General",
