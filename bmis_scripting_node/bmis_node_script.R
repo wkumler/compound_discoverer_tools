@@ -12,6 +12,9 @@ CD_json_in <- fromJSON(file=commandArgs()[6])
 # Compounds <- read.table(r"(C:\ProgramData\Thermo\Compound Discoverer 3.4\Scratch\Job190\BMISno(17)\ConsolidatedUnknownCompoundItem.txt)", header=TRUE, check.names = FALSE)
 # CD_json_in <- fromJSON(file = r"(C:\ProgramData\Thermo\Compound Discoverer 3.4\Scratch\Job190\BMISno(17)\node_args.json)")
 
+# Compounds <- read.table("C:/Users/Ingalls Lab/Desktop/Susan NMM/ConsolidatedUnknownCompoundItem.txt", header=TRUE, check.names = FALSE)
+# CD_json_in <- fromJSON(file = "C:/Users/Ingalls Lab/Desktop/Susan NMM/node_args.json")
+
 colname_regex_str <- c(
   "Area",
   "Gap Status",
@@ -71,6 +74,18 @@ all_IS <- Compounds_long %>%
   filter(str_detect(Name, internal_standard_regex)) %>%
   mutate(samp_type=ifelse(str_detect(`File Name`, pooled_sample_regex), "Pooled", "All")) %>%
   select(Name, `File Name`, samp_type, Area)
+
+bad_IS <- all_IS %>%
+  count(Name, `File Name`) %>%
+  distinct(Name, n) %>%
+  filter(n>1) %>%
+  pull(Name)
+for(i in bad_IS){
+  print(paste0("Multiple annotations found for ", i, "; excluding it"))
+}
+Compounds_long <- Compounds_long %>%
+  filter(!Name%in%bad_IS)
+
 
 pooled_IS <- Compounds_long %>%
   filter(str_detect(Name, internal_standard_regex)) %>%
