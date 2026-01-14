@@ -41,7 +41,7 @@ if(all(is.na(Compounds$Name))){
 internal_standard_regex <- CD_json_in$NodeParameters$`Internal standard regex`
 pooled_sample_regex <- CD_json_in$NodeParameters$`Pooled sample regex`
 half_v_full_regex <- CD_json_in$NodeParameters$`Dilution regex`
-exclude_std <- as.logical(CD_json_in$NodeParameters$`Exclude standards`)
+exclude_std_blk <- as.logical(CD_json_in$NodeParameters$`Exclude standards`)
 min_improvement <- as.numeric(CD_json_in$NodeParameters$`Minimal improvement threshold`)
 already_good <- as.numeric(CD_json_in$NodeParameters$`Already good enough threshold`)
 # internal_standard_regex <- ", \\d"
@@ -49,7 +49,7 @@ already_good <- as.numeric(CD_json_in$NodeParameters$`Already good enough thresh
 # half_v_full_regex <- "Half|Full"
 # min_improvement <- 0.2
 # already_good <- 0.1
-# exclude_std <- TRUE
+# exclude_std_blk <- TRUE
 
 
 Compounds_long <- Compounds %>%
@@ -65,9 +65,9 @@ Compounds_long <- Compounds %>%
     values_drop_na = FALSE
   ) %>%
   filter(`File Name`!="Max")
-if(exclude_std){
+if(exclude_std_blk){
   Compounds_long <- Compounds_long %>%
-    filter(!str_detect(`File Name`, "_Std_"))
+    filter(!str_detect(`File Name`, "_Std_|Blk_Blk"))
 }
 
 all_IS <- Compounds_long %>%
@@ -176,10 +176,10 @@ BMISed_areas <- best_matched_IS %>%
 
 
 # add result column to table
-if(exclude_std){
+if(exclude_std_blk){
   chosen_fnames <- colnames(Compounds) %>%
     str_subset("^Area .* F\\d+") %>%
-    str_subset("_Std_", negate = TRUE)
+    str_subset("_Std_|Blk_Blk", negate = TRUE)
   matched_names <- data.frame(
     `File Name`=chosen_fnames,
     patched=unique(BMISed_areas$`File Name`), 

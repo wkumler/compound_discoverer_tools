@@ -58,9 +58,9 @@
     {
       "Category":"General",
       "DataType":"Boolean",
-      "Name":"Exclude standards",
+      "Name":"Exclude standards and blanks",
       "Default":true,
-      "Description":"Exclude the standard files (matching '_Std_') from the normalization?"
+      "Description":"Exclude the standard and blank files (matching '_Std_|Blk_Blk') from the normalization? Neither of these have IS added so normalizing to them often gives uninterpretable results."
     }
   ]
 }
