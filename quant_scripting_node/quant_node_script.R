@@ -9,6 +9,9 @@ CD_json_in <- fromJSON(file=commandArgs()[6])
 saveRDS(CD_json_in, "~/../Desktop/CD_json_in.rds")
 # CD_json_in <- readRDS("~/../Desktop/CD_json_in.rds")
 
+# Compounds <- read.table("C:/Users/Ingalls Lab/Desktop/Susan NMM/ConsolidatedUnknownCompoundItem.txt", header=TRUE, check.names = FALSE)
+# CD_json_in <- fromJSON(file = "C:/Users/Ingalls Lab/Desktop/Susan NMM/node_args.json")
+
 colname_regex_str <- c(
   "Area",
   "NormArea BMISed Area",
@@ -51,7 +54,9 @@ if(!str_detect(stan_source, "\\/")){
 }
 
 stan_init <- read_csv(stan_source, show_col_types = FALSE)
-write_csv(stan_init, str_replace(CD_json_in$ResultFilePath, "\\.cdResult$", "_stdsheet.csv"))
+outpath <- str_replace(CD_json_in$ResultFilePath, "\\.cdResult$", "_stdsheet.csv")
+write_csv(stan_init, outpath)
+print(paste("Standards sheet written to", outpath))
 
 stan_data <- stan_init %>%
   filter(Column==column_type) %>% #Match column type
@@ -110,7 +115,7 @@ CD_json_out <- CD_json_in
 newcolumn <- list()
 newcolumn[[1]] = "RF"       ## ColumnName
 newcolumn[[2]] = FALSE     ## IsID
-newcolumn[[3]] = "String"    ## DataType
+newcolumn[[3]] = "Float"    ## DataType
 newcolumn[[4]] <- list(FormatString="F0")    ## Options
 names(newcolumn) <- c("ColumnName", "IsID", "DataType", "Options")
 
@@ -120,7 +125,8 @@ new_col_descs <- lapply(matched_names$`File Name`, function(filename_i){
     IsID=FALSE,
     DataType="Float",
     Options=list(
-      DataGroupName="Conc."
+      DataGroupName="Conc.",
+      FormatString="F2"
     )
   )
 })
