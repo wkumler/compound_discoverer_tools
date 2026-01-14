@@ -82,6 +82,7 @@ RFs <- Compounds_long %>%
   filter(str_detect(`File Name`, stan_regex)) %>%
   select(`Compounds ID`, Name, `File Name`, Polarity, Area) %>%
   inner_join(stan_data, by = join_by(Name==Compound_Name, Polarity)) %>%
+  drop_na(Area) %>% # Not really sure this is how I should be handling polarity...
   mutate(mix_type=ifelse(str_detect(`File Name`, HILIC_Mix), "correct_mix", "other_mix")) %>%
   filter(str_detect(`File Name`, matrix_regex)) %>%
   select(`Compounds ID`, Name, Area, Concentration_uM, mix_type) %>%
@@ -91,7 +92,7 @@ RFs <- Compounds_long %>%
 
 quant_concs <- Compounds_long %>%
   inner_join(RFs, by=join_by(`Compounds ID`)) %>%
-  mutate(conc_in_nM=NormArea_BMISed_Area/RF/filter_volume*recon_volume*1000*dilution_applied) %>%
+  mutate(conc_in_nM=(NormArea_BMISed_Area/RF)*(recon_volume/filter_volume)*1000*dilution_applied) %>%
   select(`Compounds ID`, Name, Polarity, RF, `File Name`, conc_in_nM)
 # quant_concs %>%
 #   pivot_wider(names_from = c(Name, `Compounds ID`), values_from = conc_in_nM, names_glue = "{Name} ({`Compounds ID`})")
