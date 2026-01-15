@@ -35,8 +35,8 @@ Compounds <- read.table(CD_json_in$Tables[[1]]$DataFile, header=TRUE, check.name
 
 stan_source <- CD_json_in$NodeParameters$`Standard sheet source`
 column_type <- CD_json_in$NodeParameters$`Column type`
-recon_volume <- as.numeric(CD_json_in$NodeParameters$`Volume filtered (L)`)
-filter_volume <- as.numeric(CD_json_in$NodeParameters$`Reconstitution volume (L)`)
+recon_volume <- as.numeric(CD_json_in$NodeParameters$`Reconstitution volume (L)`)
+filter_volume <- as.numeric(CD_json_in$NodeParameters$`Volume filtered (L)`)
 dilution_applied <- as.numeric(CD_json_in$NodeParameters$`Dilution applied`)
 stan_regex <- CD_json_in$NodeParameters$`Standard file regex`
 matrix_regex <- CD_json_in$NodeParameters$`Matrix regex`
