@@ -69,6 +69,14 @@
       "Name":"Matrix regex",
       "Default":"Matrix",
       "Description":"How should the standards in a matrix be distinguished from the standards in water that are typically run alongside? Provide a regular expression here that will return True when passed to str_detect with the file names."
+    },
+    {
+      "Category":"General",
+      "DataType":"String",
+      "Name":"Raw or BMISed areas",
+      "Default":"BMIS",
+      "SelectionValues": ["BMIS", "Raw"],
+      "Description":"Perform quantification on the raw peak areas or those obtained from the BMIS CD node?"
     }
   ]
 }

@@ -40,6 +40,7 @@ filter_volume <- as.numeric(CD_json_in$NodeParameters$`Volume filtered (L)`)
 dilution_applied <- as.numeric(CD_json_in$NodeParameters$`Dilution applied`)
 stan_regex <- CD_json_in$NodeParameters$`Standard file regex`
 matrix_regex <- CD_json_in$NodeParameters$`Matrix regex`
+raw_or_bmis <- CD_json_in$NodeParameters$`Raw or BMISed areas`
 
 
 # If empty, pull down most recent
@@ -90,10 +91,18 @@ RFs <- Compounds_long %>%
   mutate(RF=(correct_mix-other_mix)/Concentration_uM) %>%
   select(`Compounds ID`, RF)
 
-quant_concs <- Compounds_long %>%
-  inner_join(RFs, by=join_by(`Compounds ID`)) %>%
-  mutate(conc_in_nM=(NormArea_BMISed_Area/RF)*(recon_volume/filter_volume)*1000*dilution_applied) %>%
-  select(`Compounds ID`, Name, Polarity, RF, `File Name`, conc_in_nM)
+if(raw_or_bmis=="BMIS"){
+  quant_concs <- Compounds_long %>%
+    inner_join(RFs, by=join_by(`Compounds ID`)) %>%
+    mutate(conc_in_nM=(Area/RF)*(recon_volume/filter_volume)*1000*dilution_applied) %>%
+    select(`Compounds ID`, Name, Polarity, RF, `File Name`, conc_in_nM)
+} else {
+  quant_concs <- Compounds_long %>%
+    inner_join(RFs, by=join_by(`Compounds ID`)) %>%
+    mutate(conc_in_nM=(NormArea_BMISed_Area/RF)*(recon_volume/filter_volume)*1000*dilution_applied) %>%
+    select(`Compounds ID`, Name, Polarity, RF, `File Name`, conc_in_nM)
+}
+
 # quant_concs %>%
 #   pivot_wider(names_from = c(Name, `Compounds ID`), values_from = conc_in_nM, names_glue = "{Name} ({`Compounds ID`})")
 
