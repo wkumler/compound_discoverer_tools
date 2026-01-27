@@ -1,3 +1,7 @@
+
+*/*.cdResult
+*/*.raw
+
 # History files
 .Rhistory
 .Rapp.history

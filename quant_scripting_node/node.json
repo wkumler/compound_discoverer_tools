@@ -1,0 +1,74 @@
+{
+  "Guid": "d3f4b5ca-361f-41d4-8700-8fd2127ba7d0",
+  "Category": "Ingalls Lab custom nodes",
+  "Name": "Known molecule quantification",
+  "Description": "Converts peak areas into absolute concentrations for molecules that have an authentic standard run alongside the samples.",
+  "Version": 1,
+  "Publisher": null,
+  "DevelopedBy": "William Kumler",
+  "Homepage": "https://github.com/wkumler/compound_discoverer_tools/tree/main/quant_scripting_node",
+  "LegalInformation": null,
+  "WorkflowType": "Post-Processing",
+  "ImageLarge": "IMG_32x32.png",
+  "ImageSmall": "IMG_16x16.png",
+  "License": null,
+  "ScriptProcessorArguments": {
+    "ExecutableCommandLineArguments": "\"C:\\Program Files\\Thermo\\Compound Discoverer 3.4\\Tools\\Scripts\\ingalls_quant\\quant_node_script.R\" %NODEARGS% %PARAMETERS%",
+    "ExecutablePath": "C:\\Program Files\\R\\R-4.5.1\\bin\\Rscript.exe",
+    "ExpectResponse": true,
+    "UseRFriendlyNames": true,
+    "RequestedTablesAndColumns": "Compounds"
+  },
+  "Parameters":[
+    {
+      "Category":"General",
+      "DataType":"String",
+      "Name":"Standard sheet source",
+      "Default":"",
+      "Description":"Where should the standards sheet be read from? Must contain Compound_Name (matching the Name column in the Compounds table), Column (HILIC, RP, CYANO, or C18), z (aka charge, mostly -1 or +1), and Concentration_uM (standard conc. in micromolar). Sources can be a local file (must include the absolute path), a full URL, or a commit in the Ingalls Standards Github."
+    },
+    {
+      "Category":"General",
+      "DataType":"String",
+      "Name":"Column type",
+      "Default":"HILIC",
+      "SelectionValues": ["HILIC", "RP", "CYANO", "C18"],
+      "Description":"Chromatography column used for this dataset."
+    },
+    {
+      "Category":"General",
+      "DataType":"Float",
+      "Name":"Volume filtered (L)",
+      "Default":2,
+      "Description":"The volume of sample initially filtered, in liters. Used to calculate the degree to which the samples have been concentrated."
+    },
+    {
+      "Category":"General",
+      "DataType":"Float",
+      "Name":"Reconstitution volume (L)",
+      "Default":0.0004,
+      "Description":"The volume of solvent (in liters) into which samples were reconstituted after dry-down. Used to calculate the degree to which the samples have been concentrated."
+    },
+    {
+      "Category":"General",
+      "DataType":"Float",
+      "Name":"Dilution applied",
+      "Default":1,
+      "Description":"What degree of dilution was applied during sampling? Sometimes samples can be too concentrated to behave well on the column. The default, 1, means no dilution was performed. A value of 2 would indicate that the samples were diluted 1:1 with water, a value of 4 would indicate 2:1 with water. I think."
+    },
+    {
+      "Category":"General",
+      "DataType":"String",
+      "Name":"Standard file regex",
+      "Default":"_Std_",
+      "Description":"How should the authentic standards be identified? In the Ingalls Lab, we include _Std_ in file names of the single-point standard curve so we can pass the '_Std_' regular expression to str_detect to identify them."
+    },
+    {
+      "Category":"General",
+      "DataType":"String",
+      "Name":"Matrix regex",
+      "Default":"Matrix",
+      "Description":"How should the standards in a matrix be distinguished from the standards in water that are typically run alongside? Provide a regular expression here that will return True when passed to str_detect with the file names."
+    }
+  ]
+}
