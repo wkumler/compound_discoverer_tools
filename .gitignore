@@ -1,6 +1,7 @@
 
 */*.cdResult
 */*.raw
+*/raw_files/
 
 # History files
 .Rhistory
