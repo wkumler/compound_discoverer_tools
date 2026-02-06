@@ -3,7 +3,7 @@ library(rjson)
 CD_json_in <- fromJSON(file=commandArgs()[6])
 
 node_dev_dir <- "C:/Users/Ingalls Lab/Desktop/compound_discoverer_tools"
-project_dir <- "/bmis_scripting_node"
+project_dir <- "/example_node"
 
 v <- lapply(CD_json_in$Tables, function(table_info_i){
   print(table_info_i$TableName)
