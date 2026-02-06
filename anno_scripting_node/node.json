@@ -1,0 +1,53 @@
+{
+  "Guid": "67c58491-adbf-4397-9eaa-c8c322177c95",
+  "Category": "Ingalls Lab custom nodes",
+  "Name": "Ingalls Annotation Checks",
+  "Description": "TBD",
+  "Version": 1,
+  "Publisher": null,
+  "DevelopedBy": "William Kumler",
+  "Homepage": "https://github.com/wkumler/compound_discoverer_tools",
+  "LegalInformation": null,
+  "WorkflowType": "Post-Processing",
+  "ImageLarge": "IMG_32x32.png",
+  "ImageSmall": "IMG_16x16.png",
+  "License": null,
+  "ScriptProcessorArguments": {
+    "ExecutableCommandLineArguments": "\"C:\\Program Files\\Thermo\\Compound Discoverer 3.4\\Tools\\Scripts\\anno_node\\anno_node_script.R\" %NODEARGS% %PARAMETERS%",
+    "ExecutablePath": "C:\\Program Files\\R\\R-4.5.1\\bin\\Rscript.exe",
+    "ExpectResponse": true,
+    "UseRFriendlyNames": true,
+    "RequestedTablesAndColumns": "Compounds"
+  },
+  "Parameters":[
+    {
+      "Category":"General",
+      "DataType":"String",
+      "Name":"String entry",
+      "Default":"string",
+      "Description":"Description"
+    },
+    {
+      "Category":"General",
+      "DataType":"Float",
+      "Name":"Float entry",
+      "Default":0.2,
+      "Description":"Description"
+    },
+    {
+      "Category":"General",
+      "DataType":"Boolean",
+      "Name":"Boolean entry",
+      "Default":true,
+      "Description":"Description"
+    },
+    {
+      "Category":"Advanced",
+      "DataType":"String",
+      "Name":"String selection with options",
+      "Default":"Option 1",
+      "SelectionValues": ["Option 1", "Option 2", "Option 3"],
+      "Description":"Description"
+    }
+  ]
+}
