@@ -11,7 +11,7 @@ The repository contains two files:
 
 ## Installation
 
-To install the BMIS normalizer, ensure R is installed and obtain its path (typically XXX)
+To install the BMIS normalizer, ensure R is installed and obtain its path (typically `C:\Program Files\R\R-X.X.X\bin\R.exe`)
 You will need to install the `rjson` package from CRAN and the `tidyverse` packages
 for data manipulation internally.
 
