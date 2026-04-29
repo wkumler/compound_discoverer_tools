@@ -159,7 +159,7 @@ IS_cvs <- all_cvs %>%
 
 best_matched_IS <- all_cvs %>%
   group_by(`Compounds ID`, Name) %>%
-  mutate(has_IS=ifelse(Name=="", FALSE, str_detect(Name_IS, Name))) %>%
+  mutate(has_IS=ifelse(Name=="", FALSE, str_detect(Name_IS, fixed(Name)))) %>%
   mutate(already_good=ifelse(pooled_cv[Name_IS=="None"]<already_good & Name_IS=="None", TRUE, FALSE)) %>%
   mutate(pooled_cv=ifelse(Name_IS=="None", pooled_cv*(1-min_improvement), pooled_cv)) %>%
   arrange(!has_IS, !already_good, pooled_cv) %>%
