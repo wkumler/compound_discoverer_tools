@@ -1,4 +1,7 @@
 
+print("Duckdb script starting!")
+
+
 library(rjson)
 library(mzml2db)
 

@@ -1,5 +1,5 @@
 
-print("Script starting!")
+print("Quant script starting!")
 
 options(tidyverse.quiet = TRUE)
 library(tidyverse)

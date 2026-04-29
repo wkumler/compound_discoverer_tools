@@ -1,5 +1,5 @@
 
-print("Script starting!")
+print("BMIS script starting!")
 
 options(tidyverse.quiet = TRUE)
 library(tidyverse)
