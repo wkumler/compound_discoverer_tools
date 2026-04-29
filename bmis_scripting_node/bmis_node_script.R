@@ -81,7 +81,7 @@ bad_IS <- all_IS %>%
   filter(n>1) %>%
   pull(Name)
 for(i in bad_IS){
-  print(paste0("Multiple annotations found for ", i, "; excluding it"))
+  message(paste0("Multiple annotations found for ", i, "; excluding it"))
 }
 Compounds_long <- Compounds_long %>%
   filter(!Name%in%bad_IS)
