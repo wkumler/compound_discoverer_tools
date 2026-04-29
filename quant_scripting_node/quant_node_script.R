@@ -54,7 +54,7 @@ if(!str_detect(stan_source, "\\/")){
   stan_source <- paste0("https://github.com/IngallsLabUW/Ingalls_Standards/raw/", stan_source, "/Ingalls_Lab_Standards.csv")
 }
 
-stan_init <- read_csv(stan_source, show_col_types = FALSE)
+stan_init <- suppressMessages(read_csv(stan_source, show_col_types = FALSE))
 outpath <- str_replace(CD_json_in$ResultFilePath, "\\.cdResult$", "_stdsheet.csv")
 write_csv(stan_init, outpath)
 print(paste("Standards sheet written to", outpath))
