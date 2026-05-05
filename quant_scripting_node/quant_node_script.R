@@ -136,7 +136,7 @@ new_col_descs <- lapply(matched_names$`File Name`, function(filename_i){
     DataType="Float",
     Options=list(
       DataGroupName="Conc.",
-      FormatString="F2"
+      FormatString="F5"
     )
   )
 })
